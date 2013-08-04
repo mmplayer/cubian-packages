@@ -1,0 +1,239 @@
+#!/bin/bash
+
+set -e
+
+ROOT_PATH=${ROOT_PATH:-"/"}
+if [[ $ROOT_PATH != "/" ]];then
+	ROOT_PATH=${ROOT_PATH%/}
+fi
+
+FW_REPO="https://github.com/cubieplayer/cubian-firmware.git"
+FW_REPO_LOCAL="${ROOT_PATH}/root/.cubian-firmware"
+FW_MOD_PATH="${ROOT_PATH}/lib/modules"
+FW_CURRENT_REV="${FW_REPO_LOCAL}/.firmware_revision"
+GIT_CMD="git --git-dir=\"${FW_REPO_LOCAL}/.git\" --work-tree=\"${FW_REPO_LOCAL}\""
+
+OPT_VERBOSE=false
+OPT_REINSTALL=false
+OPT_SKIP_KERNEL=false
+OPT_SKIP_MODULES=false
+
+COLOR_NORMAL=$(echo -e "\033[m")
+COLOR_BLUE=$(echo -e "\033[36m")
+COLOR_GREEN=$(echo -e "\033[32m")
+COLOR_YELLOW=$(echo -e "\033[33m")
+COLOR_GRAY=$(echo -e "\033[37m")
+COLOR_RED=$(echo -e "\033[31m")
+
+BRANCH=
+
+usage(){
+cat<<EOF
+Usage: $0 options
+
+Options:
+  -h Show this message
+  -r reinstall, if you first skipped to install the kernel or modules, you may reinstall it by this option
+  -v Verbose
+  --skip-kernel Skip to update kernel
+  --skip-modules Skip to update modules
+EOF
+}
+
+if ! OPTIONS=$(getopt -o hrv -l help -l reinstall -l skip-kernel -l skip-modules -- "$@");then
+	usage
+	exit 1
+fi
+
+set -- $OPTIONS
+
+while [ $# -gt 0 ];do
+	case $1 in
+		-h|--help)
+			usage
+			exit 0
+			;;
+		-r|--reinstall)
+			OPT_REINSTALL=true
+			;;
+		-v) 
+			OPT_VERBOSE=true
+			;;
+		--skip-kernel)
+			OPT_SKIP_KERNEL=true
+			;;
+		--skip-modules)
+			OPT_SKIP_MODULES=true
+			;;
+		(--) 
+			shift; 
+			break
+			;;
+		(-*) 
+			echo "$0: error - unrecognized option $1" 1>&2
+			exit 1
+			;;
+    	(*) 
+			break
+			;;
+	esac
+	shift
+done
+
+debug(){
+	if $OPT_VERBOSE;then
+		echo $1
+	fi
+}
+
+skipOpt2str(){
+	if $1;then
+		echo "no"
+	else
+		echo "yes"
+	fi
+}
+
+checkRootPath(){
+	if [[ ! -d $ROOT_PATH/lib/modules ]] || [[ ! -d $ROOT_PATH/boot ]];then
+		return 1
+	fi
+	return 0
+}
+
+determineBranch(){
+	set +e
+	ls $ROOT_PATH/lib/modules | grep 'sun7i\|3.3.0+' > /dev/null 2>&1
+	if [[ $? -eq 0 ]];then
+		BRANCH="a20"
+	else
+		BRANCH="a10"
+	fi
+	set -e
+}
+
+echoBlue(){
+	echo "${COLOR_BLUE}${1}${COLOR_NORMAL}"
+}
+echoRed(){
+	echo "${COLOR_RED}${1}${COLOR_NORMAL}"
+}
+
+echoGreen(){
+	echo "${COLOR_GREEN}${1}${COLOR_NORMAL}"
+}
+
+downloadRepo(){
+	echoBlue "*** Downloading firmware (this may take a few minutes)"
+	mkdir -p "${FW_REPO_LOCAL}"
+	set +e
+	if $OPT_VERBOSE;then
+		git clone "${FW_REPO}" "${FW_REPO_LOCAL}" --branch ${BRANCH}
+	else
+		git clone "${FW_REPO}" "${FW_REPO_LOCAL}" --branch ${BRANCH} > /dev/null 2>&1
+	fi
+	RETVAL=$?
+	set -e
+	if [[ ${RETVAL} -ne 0 ]]; then
+		echoRed "!!! Failed to download new firmware files "
+		exit 1
+	fi
+}
+
+updateRepo(){
+	eval ${GIT_CMD} pull origin
+	# incase of the remote repo reset to older version
+	eval ${GIT_CMD} reset --hard $1
+}
+
+updateKernel(){
+	if $OPT_VERBOSE;then
+		echo -n "${COLOR_GRAY}"
+		cp -v "${FW_REPO_LOCAL}/boot/uImage" "${ROOT_PATH}/boot"
+		echo -n "${NORMAL}"
+	else
+		cp "${FW_REPO_LOCAL}/boot/uImage" "${ROOT_PATH}/boot"
+	fi
+}
+
+updateModules(){
+	echoBlue "*** Updating modules"
+	if $OPT_VERBOSE;then
+		echo -n "${COLOR_GRAY}"
+		cp -vR "${FW_REPO_LOCAL}/modules/"* "${FW_MOD_PATH}/"
+		echo -n "${NORMAL}"
+	else
+		cp -R "${FW_REPO_LOCAL}/modules/"* "${FW_MOD_PATH}/"
+	fi
+	find "${FW_REPO_LOCAL}/modules" -mindepth 1 -maxdepth 1 -type d | while read DIR; do
+			echoBlue "*** Depmod $(basename "${DIR}")"
+			depmod -b "${ROOT_PATH}" -a $(basename "${DIR}")
+	done
+}
+
+updateFirmware(){
+	echoBlue "*** Updating firmware"
+	if ! $OPT_SKIP_KERNEL;then
+		updateKernel
+	else
+		echoBlue "*** As requested, not updating kernel"
+	fi
+	if ! $OPT_SKIP_MODULES;then
+		updateModules
+	else
+		echoBlue "*** As requested, not updating modules"
+	fi
+	if [[ ! $OPT_SKIP_KERNEL ]] || [[ ! $OPT_SKIP_MODULES ]];then
+		echoGreen "*** Update success, A reboot is needed for changes to take effects"
+	fi
+	eval ${GIT_CMD} rev-parse ${BRANCH} > "${FW_CURRENT_REV}"
+}
+
+# main
+if [[ ${EUID} -ne 0 ]]; then
+	echoRed "!!! This tool must be run as root"
+	exit 1
+fi
+
+echoBlue "*** Cubian updater "
+
+debug "Root Path: ${ROOT_PATH}"
+debug "Update Kernel: $(skipOpt2str ${OPT_SKIP_KERNEL})"
+debug "Update Modules: $(skipOpt2str ${OPT_SKIP_MODULES})"
+
+if ! checkRootPath;then
+	echoRed"error: can't update, please correct ROOT_PATH. The current value is $ROOT_PATH"
+	exit
+fi
+
+determineBranch
+debug "Branch: $BRANCH"
+
+if [[ ! -f "${FW_REPO_LOCAL}/.git/config" ]];then
+	downloadRepo
+fi
+
+if [[ ! -f "${FW_CURRENT_REV}" ]];then
+	updateFirmware
+else
+	if $OPT_REINSTALL;then
+		updateFirmware
+		echoGreen "*** Reinstall successful"
+		exit 0
+	fi
+	echoGreen "*** Checking firmware updates from server"
+	debug "Checking updates from server ${FW_REPO}"
+	FW_REMOTE_REV=$(git ls-remote -h ${FW_REPO} refs/heads/${BRANCH} | awk '{print $1}')
+	FW_LOCAL_REV=$(cat "${FW_CURRENT_REV}")
+
+	debug "Remote revision: ${FW_REMOTE_REV}"
+	debug "Local revision: ${FW_LOCAL_REV}"
+
+	if [[ "$FW_LOCAL_REV" == "$FW_REMOTE_REV" ]]; then
+		echoGreen "*** The firmware is up to date"
+	else
+		updateRepo $FW_REMOTE_REV
+		updateFirmware
+	fi
+fi
+exit 0
