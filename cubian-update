@@ -15,6 +15,7 @@ GIT_CMD="git --git-dir=\"${FW_REPO_LOCAL}/.git\" --work-tree=\"${FW_REPO_LOCAL}\
 
 OPT_VERBOSE=false
 OPT_REINSTALL=false
+REVERT_FIRMWARE=false
 OPT_SKIP_KERNEL=false
 OPT_SKIP_MODULES=false
 
@@ -31,16 +32,28 @@ usage(){
 cat<<EOF
 Usage: $0 options
 
+This script will update your system files to latest version. It respects the
+enviroment variable ROOT_PATH, It sets to '/' by default.
+
 Options:
-  -h Show this message
-  -r reinstall, if you first skipped to install the kernel or modules, you may reinstall it by this option
-  -v Verbose
-  --skip-kernel Skip to update kernel
-  --skip-modules Skip to update modules
+  -h,--help            Show this message
+  -r,--reinstall       Perform reinstallation of the updates
+  -v,--verbos          Verbose output
+     --revert-firmware Revert firmware. You may executes the revert command
+                       mutiple times in order to update the firmware to historical
+                       versions
+     --skip-kernel     Skip to update kernel
+     --skip-modules    Skip to update modules
 EOF
 }
 
-if ! OPTIONS=$(getopt -o hrv -l help -l reinstall -l skip-kernel -l skip-modules -- "$@");then
+if ! OPTIONS=$(getopt -o hrv -l help \
+-l reinstall \
+-l verbose \
+-l revert-firmware \
+-l skip-kernel \
+-l skip-modules \
+-- "$@");then
 	usage
 	exit 1
 fi
@@ -56,8 +69,11 @@ while [ $# -gt 0 ];do
 		-r|--reinstall)
 			OPT_REINSTALL=true
 			;;
-		-v) 
+		-v|--verbose) 
 			OPT_VERBOSE=true
+			;;
+		--revert-firmware)
+			REVERT_FIRMWARE=true
 			;;
 		--skip-kernel)
 			OPT_SKIP_KERNEL=true
@@ -94,6 +110,14 @@ skipOpt2str(){
 	fi
 }
 
+bool2str(){
+	if $1;then
+		echo "yes"
+	else
+		echo "no"
+	fi
+}
+
 checkRootPath(){
 	if [[ ! -d $ROOT_PATH/lib/modules ]] || [[ ! -d $ROOT_PATH/boot ]];then
 		return 1
@@ -123,8 +147,8 @@ echoGreen(){
 	echo "${COLOR_GREEN}${1}${COLOR_NORMAL}"
 }
 
-downloadRepo(){
-	echoBlue "*** Downloading firmware (this may take a few minutes)"
+downloadFirmwareRepo(){
+	echoBlue "*** Downloading firmware (this may take a while)"
 	mkdir -p "${FW_REPO_LOCAL}"
 	set +e
 	if $OPT_VERBOSE;then
@@ -135,18 +159,44 @@ downloadRepo(){
 	RETVAL=$?
 	set -e
 	if [[ ${RETVAL} -ne 0 ]]; then
-		echoRed "!!! Failed to download new firmware files "
+		echoRed "!!! Failed to download firmware,Please check internet connection"
 		exit 1
 	fi
 }
 
-updateRepo(){
-	eval ${GIT_CMD} pull origin
-	# incase of the remote repo reset to older version
-	eval ${GIT_CMD} reset --hard $1
+updateFirmwareRepo(){
+	if $OPT_VERBOSE;then
+		eval ${GIT_CMD} pull origin
+		# incase of the remote repo reset to older version
+		# force the repo sync with remote
+		eval ${GIT_CMD} reset --hard $1
+	else
+		eval ${GIT_CMD} pull origin > /dev/null 2>&1
+		# incase of the remote repo reset to older version
+		# force the repo sync with remote
+		eval ${GIT_CMD} reset --hard $1 > /dev/null 2>&1
+	fi
+}
+
+revertFirmwareRepo(){
+	echoBlue "*** Revert firmware"
+	set +e
+	if $OPT_VERBOSE;then
+		eval ${GIT_CMD} reset --hard HEAD~1
+	else
+		eval ${GIT_CMD} reset --hard HEAD~1 > /dev/null 2>&1
+	fi
+	if [[ "$?" != "0" ]];then
+		echoRed "*** Revert firmware failed, reached the oldest version"
+		# allow to update firmware later
+		eval ${GIT_CMD} rev-parse ${BRANCH} > "${FW_CURRENT_REV}"
+		exit 2
+	fi
+	set -e
 }
 
 updateKernel(){
+	echoBlue "*** Updating kernel"
 	if $OPT_VERBOSE;then
 		echo -n "${COLOR_GRAY}"
 		cp -v "${FW_REPO_LOCAL}/boot/uImage" "${ROOT_PATH}/boot"
@@ -183,7 +233,7 @@ updateFirmware(){
 	else
 		echoBlue "*** As requested, not updating modules"
 	fi
-	if [[ ! $OPT_SKIP_KERNEL ]] || [[ ! $OPT_SKIP_MODULES ]];then
+	if ! $OPT_SKIP_KERNEL || ! $OPT_SKIP_MODULES;then
 		echoGreen "*** Update success, A reboot is needed for changes to take effects"
 	fi
 	eval ${GIT_CMD} rev-parse ${BRANCH} > "${FW_CURRENT_REV}"
@@ -195,14 +245,14 @@ if [[ ${EUID} -ne 0 ]]; then
 	exit 1
 fi
 
-echoBlue "*** Cubian updater "
+#echoBlue "*** Cubian updater"
 
 debug "Root Path: ${ROOT_PATH}"
 debug "Update Kernel: $(skipOpt2str ${OPT_SKIP_KERNEL})"
 debug "Update Modules: $(skipOpt2str ${OPT_SKIP_MODULES})"
 
 if ! checkRootPath;then
-	echoRed"error: can't update, please correct ROOT_PATH. The current value is $ROOT_PATH"
+	echoRed "error: can't update, please correct ROOT_PATH. The current value is $ROOT_PATH"
 	exit
 fi
 
@@ -210,15 +260,26 @@ determineBranch
 debug "Branch: $BRANCH"
 
 if [[ ! -f "${FW_REPO_LOCAL}/.git/config" ]];then
-	downloadRepo
+	downloadFirmwareRepo
+fi
+
+if $REVERT_FIRMWARE;then
+	revertFirmwareRepo
+	updateFirmware
+	exit 0
 fi
 
 if [[ ! -f "${FW_CURRENT_REV}" ]];then
 	updateFirmware
+	# assumes it's reinstallation
+	if $OPT_REINSTALL;then
+		echoGreen "*** Reinstall success"
+		exit 0
+	fi
 else
 	if $OPT_REINSTALL;then
 		updateFirmware
-		echoGreen "*** Reinstall successful"
+		echoGreen "*** Reinstall success"
 		exit 0
 	fi
 	echoGreen "*** Checking firmware updates from server"
@@ -230,9 +291,9 @@ else
 	debug "Local revision: ${FW_LOCAL_REV}"
 
 	if [[ "$FW_LOCAL_REV" == "$FW_REMOTE_REV" ]]; then
-		echoGreen "*** The firmware is up to date"
+		echoGreen "*** Your firmware is up to date"
 	else
-		updateRepo $FW_REMOTE_REV
+		updateFirmwareRepo $FW_REMOTE_REV
 		updateFirmware
 	fi
 fi
