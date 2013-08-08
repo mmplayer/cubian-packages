@@ -33,7 +33,7 @@ cat<<EOF
 Usage: $0 options
 
 This script will update your system files to latest version. It respects the
-enviroment variable ROOT_PATH, It sets to '/' by default.
+enviroment variable ROOT_PATH, it sets to '/' by default.
 
 Options:
   -h,--help            Show this message
