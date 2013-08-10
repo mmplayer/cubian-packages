@@ -21,6 +21,9 @@ REVERT_FIRMWARE=false
 OPT_SKIP_KERNEL=false
 OPT_SKIP_MODULES=false
 
+DOES_UPDATE_KERNEL=false
+DOES_UPDATE_MODULES=false
+
 COLOR_NORMAL=$(echo -e "\033[m")
 COLOR_BLUE=$(echo -e "\033[36m")
 COLOR_GREEN=$(echo -e "\033[32m")
@@ -206,6 +209,7 @@ updateKernel(){
 	else
 		cp "${FW_REPO_LOCAL}/boot/uImage" "${ROOT_PATH}boot"
 	fi
+    DOES_UPDATE_KERNEL=true
 }
 
 updateModules(){
@@ -221,6 +225,7 @@ updateModules(){
 			echoBlue "*** Depmod $(basename "${DIR}")"
 			depmod -b "${ROOT_PATH}" -a $(basename "${DIR}")
 	done
+	DOES_UPDATE_MODULES=true
 }
 
 updateFirmware(){
@@ -235,7 +240,7 @@ updateFirmware(){
 	else
 		echoBlue "*** As requested, not updating modules"
 	fi
-	if ! $OPT_SKIP_KERNEL || ! $OPT_SKIP_MODULES;then
+	if $DOES_UPDATE_KERNEL;then
 		echoGreen "*** Update success, A reboot is needed for changes to take effects"
 	fi
 	eval ${GIT_CMD} rev-parse ${BRANCH} > "${FW_CURRENT_REV}"
