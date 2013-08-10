@@ -1,0 +1,10 @@
+#!/bin/bash
+set -e
+if [[ -z $1 ]];then
+	echo "error: package can't be empty"
+	exit 1
+fi
+fakeroot dpkg --build $1
+pkg="$1.deb"
+lintian "$pkg"
+dpkg-sig -k 0x1F0C9FFD --sign builder $pkg
