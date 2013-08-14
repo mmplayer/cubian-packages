@@ -184,6 +184,7 @@ determineSysInstallType(){
 	else
 		SYS_INSTALL_TYPE="$SYS_INSTALL_TYPE_NAND"
 	fi
+	set -e
 }
 
 echoBlue(){
