@@ -33,6 +33,7 @@ SUNXI_SPL="${FW_REPO_LOCAL}/sunxi-spl.bin"
 
 OPT_VERBOSE=false
 OPT_REINSTALL=false
+OPT_TEST=false
 REVERT_FIRMWARE=false
 OPT_SKIP_KERNEL=false
 OPT_SKIP_MODULES=false
@@ -76,7 +77,7 @@ Options:
 EOF
 }
 
-if ! OPTIONS=$(getopt -o hrv -l help \
+if ! OPTIONS=$(getopt -o hrvt -l help \
 -l reinstall \
 -l verbose \
 -l revert-firmware \
@@ -100,6 +101,9 @@ while [ $# -gt 0 ];do
 			;;
 		-v|--verbose) 
 			OPT_VERBOSE=true
+			;;
+		-t) 
+			OPT_TEST=true
 			;;
 		--revert-firmware)
 			REVERT_FIRMWARE=true
@@ -169,7 +173,7 @@ determineBranch(){
 
 determineSysInstallType(){
 	set +e
-	cat $FSTAB | awk '{if($2=="/") {print $1}}' | grep $MMC_DEVICE
+	cat $FSTAB | awk '{if($2=="/") {print $1}}' | grep $MMC_DEVICE > /dev/null 2>&1
 	if [[ $? -eq 0 ]];then
 		SYS_INSTALL_TYPE="$SYS_INSTALL_TYPE_MMC"
 	else
@@ -244,15 +248,17 @@ updateModules(){
 
 updateBootLoaderMMC(){
 	echoBlue "*** Updating bootloader on SD-Card"
-
-	if $OPT_VERBOSE;then
-		dd if=$UBOOT_MMC of=$MMC_DEVICE bs=1024 seek=32
-	else
-		dd if=$UBOOT_MMC of=$MMC_DEVICE bs=1024 seek=32 > /dev/null 2>&1
+	if [[ -f $UBOOT_MMC ]];then
+		if $OPT_VERBOSE;then
+			debug "Write u-boot to SD-Card"
+			dd if=$UBOOT_MMC of=$MMC_DEVICE bs=1024 seek=32
+		else
+			dd if=$UBOOT_MMC of=$MMC_DEVICE bs=1024 seek=32 > /dev/null 2>&1
+		fi
 	fi
-
 	if [[ -f $SUNXI_SPL ]];then
 		if $OPT_VERBOSE;then
+			debug "Write sunxi-spl to SD-Card"
 			dd if=$SUNXI_SPL of=$MMC_DEVICE bs=1024 seek=8
 		else
 			dd if=$SUNXI_SPL of=$MMC_DEVICE bs=1024 seek=8 > /dev/null 2>&1
@@ -272,12 +278,15 @@ updateBootLoaderNAND(){
 		mount $NANDA_DEVICE $NAND_BOOT_MOUNT_POINT
 	fi
 
-	uboot_nand=$(find $NAND_BOOT_MOUNT_POINT -name "$UBOOT_BIN")
-	
-	if $OPT_VERBOSE;then
-		cp -v $UBOOT_NAND $uboot_nand
-	else
-		cp $UBOOT_NAND $uboot_nand
+	if [[ -f $UBOOT_NAND ]];then
+		uboot_nand=$(find $NAND_BOOT_MOUNT_POINT -name "$UBOOT_BIN")
+		
+		if $OPT_VERBOSE;then
+			debug "Overwrite u-boot to on nand boot partition"
+			cp -v $UBOOT_NAND $uboot_nand
+		else
+			cp $UBOOT_NAND $uboot_nand
+		fi
 	fi
 
 	umount -l $NAND_BOOT_MOUNT_POINT
@@ -364,6 +373,11 @@ if ! checkRootPath;then
 	exit
 fi
 
+if $OPT_TEST;then
+	FW_REPO="https://github.com/mmplayer/cubian-firmware.git"
+fi
+
+debug "Update From: ${FW_REPO}"
 debug "Root Path: ${ROOT_PATH}"
 debug "Update Kernel: $(skipOpt2str ${OPT_SKIP_KERNEL})"
 debug "Update Modules: $(skipOpt2str ${OPT_SKIP_MODULES})"
@@ -380,12 +394,12 @@ fi
 
 if $REVERT_FIRMWARE;then
 	# revert to previous tag based on current tag
-	if [[ -f ${FW_CURRENT_REV} ]];then
+	if [[ ! -f ${FW_CURRENT_REV} ]];then
 		echoRed "*** Revert firmware failed, missing file ${FW_CURRENT_REV}, try again with --reinstall then revert"
 		exit 2
 	fi
 	current_tagname=$(cat "${FW_CURRENT_REV}")
-	previous_tagname=$(eval ${GIT_CMD} tag -l ${BRANCH}* | awk '{if($1=="current_tag"){print p};p=$1}' current_tag=$current_tagname)
+	previous_tagname=$(eval ${GIT_CMD} tag -l ${BRANCH}* | awk '{if($1==current_tag){print p};p=$1}' current_tag=$current_tagname)
 	if [[ -z $previous_tagname ]];then
 		echoRed "*** Revert firmware failed, reached the oldest version"
 		exit 2
