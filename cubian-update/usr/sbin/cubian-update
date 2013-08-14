@@ -26,10 +26,15 @@ NANDA_DEVICE="/dev/nanda"
 NAND_BOOT_PART=
 NAND_BOOT_MOUNT_POINT="${ROOT_PATH}root/nand-bootloader"
 
-UBOOT_BIN="u-boot.bin"
-UBOOT_MMC="${FW_REPO_LOCAL}/u-boot-mmc.bin"
-UBOOT_NAND="${FW_REPO_LOCAL}/u-boot-nand.bin"
-SUNXI_SPL="${FW_REPO_LOCAL}/sunxi-spl.bin"
+NAME_UBOOT_BIN="u-boot.bin"
+NAME_UENV_TXT="uEnv.txt"
+NAME_SCRIPT_BIN="script.bin"
+
+UBOOT_MMC_UPDATE="${FW_REPO_LOCAL}/u-boot-mmc.bin"
+UBOOT_NAND_UPDATE="${FW_REPO_LOCAL}/u-boot-nand.bin"
+SUNXI_SPL_UPDATE="${FW_REPO_LOCAL}/sunxi-spl.bin"
+UENV_TXT_UPDATE="${FW_REPO_LOCAL}/boot/${NAME_UENV_TXT}"
+SCRIPT_BIN_UPDATE="${FW_REPO_LOCAL}/boot/${NAME_SCRIPT_BIN}"
 
 OPT_VERBOSE=false
 OPT_REINSTALL=false
@@ -211,6 +216,7 @@ downloadFirmwareRepo(){
 
 # update repository to lastest then checkout a specific tag
 updateFirmwareRepo(){
+	echoBlue "*** Downloading updates (this may take a while)"
 	if $OPT_VERBOSE;then
 		eval ${GIT_CMD} pull origin
 	else
@@ -248,20 +254,20 @@ updateModules(){
 
 updateBootLoaderMMC(){
 	echoBlue "*** Updating bootloader on SD-Card"
-	if [[ -f $UBOOT_MMC ]];then
+	if [[ -f $UBOOT_MMC_UPDATE ]];then
 		if $OPT_VERBOSE;then
 			debug "Write u-boot to SD-Card"
-			dd if=$UBOOT_MMC of=$MMC_DEVICE bs=1024 seek=32
+			dd if=$UBOOT_MMC_UPDATE of=$MMC_DEVICE bs=1024 seek=32
 		else
-			dd if=$UBOOT_MMC of=$MMC_DEVICE bs=1024 seek=32 > /dev/null 2>&1
+			dd if=$UBOOT_MMC_UPDATE of=$MMC_DEVICE bs=1024 seek=32 > /dev/null 2>&1
 		fi
 	fi
-	if [[ -f $SUNXI_SPL ]];then
+	if [[ -f $SUNXI_SPL_UPDATE ]];then
 		if $OPT_VERBOSE;then
 			debug "Write sunxi-spl to SD-Card"
-			dd if=$SUNXI_SPL of=$MMC_DEVICE bs=1024 seek=8
+			dd if=$SUNXI_SPL_UPDATE of=$MMC_DEVICE bs=1024 seek=8
 		else
-			dd if=$SUNXI_SPL of=$MMC_DEVICE bs=1024 seek=8 > /dev/null 2>&1
+			dd if=$SUNXI_SPL_UPDATE of=$MMC_DEVICE bs=1024 seek=8 > /dev/null 2>&1
 		fi
 	fi
 	DOES_UPDATE_BOOTLOADER=true
@@ -278,14 +284,24 @@ updateBootLoaderNAND(){
 		mount $NANDA_DEVICE $NAND_BOOT_MOUNT_POINT
 	fi
 
-	if [[ -f $UBOOT_NAND ]];then
-		uboot_nand=$(find $NAND_BOOT_MOUNT_POINT -name "$UBOOT_BIN")
+	if [[ -f $UBOOT_NAND_UPDATE ]];then
+		uboot_nand_dest=$(find $NAND_BOOT_MOUNT_POINT -name "$NAME_UBOOT_BIN")
 		
 		if $OPT_VERBOSE;then
 			debug "Overwrite u-boot to on nand boot partition"
-			cp -v $UBOOT_NAND $uboot_nand
+			cp -v $UBOOT_NAND_UPDATE $uboot_nand_dest
 		else
-			cp $UBOOT_NAND $uboot_nand
+			cp $UBOOT_NAND_UPDATE $uboot_nand_dest
+		fi
+	fi
+
+	if [[ -f $UENV_TXT_UPDATE ]];then
+		uenv_txt_dest="${ROOT_PATH}boot/${NAME_UENV_TXT}"
+		if $OPT_VERBOSE;then
+			debug "Update uEnv.txt"
+			cp -v $UENV_TXT_UPDATE $uenv_txt_dest
+		else
+			cp $UENV_TXT_UPDATE $uenv_txt_dest
 		fi
 	fi
 
@@ -321,18 +337,31 @@ updateFirmware(){
 	else
 		echoBlue "*** As requested, not updating modules"
 	fi
+
 	if [[ -b $MMC_DEVICE ]] && \
 		[[ "$SYS_INSTALL_TYPE" = "$SYS_INSTALL_TYPE_MMC" ]] && \
-		([[ -f $UBOOT_MMC ]] || [[ -f $SUNXI_SPL ]]);then
+		([[ -f $UBOOT_MMC_UPDATE ]] || [[ -f $SUNXI_SPL_UPDATE ]]);then
 		updateBootLoaderMMC
 	elif [[ -b $NAND_DEVICE ]] && \
 		[[ "$SYS_INSTALL_TYPE" = "$SYS_INSTALL_TYPE_NAND" ]] && \
-		[[ -f $UBOOT_NAND ]];then
+		([[ -f $UBOOT_NAND_UPDATE ]] || [[ -f $UENV_TXT_UPDATE ]]);then
 		updateBootLoaderNAND
 	fi
+
+	if [[ -f $SCRIPT_BIN_UPDATE ]];then
+		script_bin_dest="${ROOT_PATH}boot/${NAME_SCRIPT_BIN}"
+		if $OPT_VERBOSE;then
+			debug "update script.bin"
+			cp -v $SCRIPT_BIN_UPDATE $script_bin_dest
+		else
+			cp $SCRIPT_BIN_UPDATE $script_bin_dest
+		fi
+	fi
+
 	if $DOES_UPDATE_KERNEL || $DOES_UPDATE_BOOTLOADER;then
 		echoGreen "*** Update success, A reboot is needed for changes to take effects"
 	fi
+
 	echo "$tagname" > "${FW_CURRENT_REV}"
 }
 
