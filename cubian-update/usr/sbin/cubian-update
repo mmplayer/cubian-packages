@@ -218,11 +218,17 @@ downloadFirmwareRepo(){
 # update repository to lastest then checkout a specific tag
 updateFirmwareRepo(){
 	echoBlue "*** Downloading updates (this may take a while)"
+	branch_name=$(eval ${GIT_CMD} rev-parse --abbrev-ref HEAD)
+	if [[ "$BRANCH" != "$branch_name" ]];then
+		if $OPT_VERBOSE;then
+			eval ${GIT_CMD} checkout $BRANCH
+		else
+			eval ${GIT_CMD} checkout $BRANCH > /dev/null 2>&1
+		fi
+	fi
 	if $OPT_VERBOSE;then
-		eval ${GIT_CMD} checkout $BRANCH
 		eval ${GIT_CMD} pull -v origin
 	else
-		eval ${GIT_CMD} checkout $BRANCH > /dev/null 2>&1
 		eval ${GIT_CMD} pull -q origin > /dev/null 2>&1
 	fi
 }
