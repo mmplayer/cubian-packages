@@ -15,6 +15,22 @@ FW_MOD_PATH="${ROOT_PATH}lib/modules"
 FW_CURRENT_REV="${FW_REPO_LOCAL}/.firmware_revision"
 GIT_CMD="git --git-dir=\"${FW_REPO_LOCAL}/.git\" --work-tree=\"${FW_REPO_LOCAL}\""
 
+FSTAB="${ROOT_PATH}etc/fstab"
+
+MMC_DEVICE="/dev/mmcblk0"
+NAND_DEVICE="/dev/nand"
+
+NAND1_DEVICE="/dev/nand1"
+NANDA_DEVICE="/dev/nanda"
+
+NAND_BOOT_PART=
+NAND_BOOT_MOUNT_POINT="${ROOT_PATH}root/nand-bootloader"
+
+UBOOT_BIN="u-boot.bin"
+UBOOT_MMC="${FW_REPO_LOCAL}/u-boot-mmc.bin"
+UBOOT_NAND="${FW_REPO_LOCAL}/u-boot-nand.bin"
+SUNXI_SPL="${FW_REPO_LOCAL}/sunxi-spl.bin"
+
 OPT_VERBOSE=false
 OPT_REINSTALL=false
 REVERT_FIRMWARE=false
@@ -23,6 +39,7 @@ OPT_SKIP_MODULES=false
 
 DOES_UPDATE_KERNEL=false
 DOES_UPDATE_MODULES=false
+DOES_UPDATE_BOOTLOADER=false
 
 COLOR_NORMAL=$(echo -e "\033[m")
 COLOR_BLUE=$(echo -e "\033[36m")
@@ -31,6 +48,13 @@ COLOR_YELLOW=$(echo -e "\033[33m")
 COLOR_GRAY=$(echo -e "\033[37m")
 COLOR_RED=$(echo -e "\033[31m")
 
+SYS_INSTALL_TYPE_NAND="nand"
+SYS_INSTALL_TYPE_MMC="mmc"
+
+SYS_INSTALL_TYPE=
+
+BRANCH_A1O="a10"
+BRANCH_A20="a20"
 BRANCH=
 
 usage(){
@@ -44,9 +68,9 @@ Options:
   -h,--help            Show this message
   -r,--reinstall       Perform reinstallation of the updates
   -v,--verbos          Verbose output
-     --revert-firmware Revert firmware. You may executes the revert command
-                       mutiple times in order to update the firmware to historical
-                       versions
+     --revert-firmware Revert firmware to previous release. You may executes 
+                       the revert command mutiple times in order to update the
+                       firmware to historical versions
      --skip-kernel     Skip to update kernel
      --skip-modules    Skip to update modules
 EOF
@@ -124,7 +148,9 @@ bool2str(){
 }
 
 checkRootPath(){
-	if [[ ! -d ${ROOT_PATH}lib/modules ]] || [[ ! -d ${ROOT_PATH}boot ]];then
+	if [[ ! -d ${ROOT_PATH}lib/modules ]] ||\
+	   	[[ ! -d ${ROOT_PATH}boot ]] ||\
+	   	[[ ! -f $FSTAB ]];then
 		return 1
 	fi
 	return 0
@@ -134,11 +160,21 @@ determineBranch(){
 	set +e
 	ls ${ROOT_PATH}lib/modules | grep 'sun7i\|3.3.0+' > /dev/null 2>&1
 	if [[ $? -eq 0 ]];then
-		BRANCH="a20"
+		BRANCH="$BRANCH_A20"
 	else
-		BRANCH="a10"
+		BRANCH="$BRANCH_A10"
 	fi
 	set -e
+}
+
+determineSysInstallType(){
+	set +e
+	cat $FSTAB | awk '{if($2=="/") {print $1}}' | grep $MMC_DEVICE
+	if [[ $? -eq 0 ]];then
+		SYS_INSTALL_TYPE="$SYS_INSTALL_TYPE_MMC"
+	else
+		SYS_INSTALL_TYPE="$SYS_INSTALL_TYPE_NAND"
+	fi
 }
 
 echoBlue(){
@@ -169,35 +205,13 @@ downloadFirmwareRepo(){
 	fi
 }
 
+# update repository to lastest then checkout a specific tag
 updateFirmwareRepo(){
 	if $OPT_VERBOSE;then
 		eval ${GIT_CMD} pull origin
-		# incase of the remote repo reset to older version
-		# force the repo sync with remote
-		eval ${GIT_CMD} reset --hard $1
 	else
 		eval ${GIT_CMD} pull origin > /dev/null 2>&1
-		# incase of the remote repo reset to older version
-		# force the repo sync with remote
-		eval ${GIT_CMD} reset --hard $1 > /dev/null 2>&1
 	fi
-}
-
-revertFirmwareRepo(){
-	echoBlue "*** Revert firmware"
-	set +e
-	if $OPT_VERBOSE;then
-		eval ${GIT_CMD} reset --hard HEAD~1
-	else
-		eval ${GIT_CMD} reset --hard HEAD~1 > /dev/null 2>&1
-	fi
-	if [[ "$?" != "0" ]];then
-		echoRed "*** Revert firmware failed, reached the oldest version"
-		# allow to update firmware later
-		eval ${GIT_CMD} rev-parse ${BRANCH} > "${FW_CURRENT_REV}"
-		exit 2
-	fi
-	set -e
 }
 
 updateKernel(){
@@ -228,8 +242,66 @@ updateModules(){
 	DOES_UPDATE_MODULES=true
 }
 
+updateBootLoaderMMC(){
+	echoBlue "*** Updating bootloader on SD-Card"
+
+	if $OPT_VERBOSE;then
+		dd if=$UBOOT_MMC of=$MMC_DEVICE bs=1024 seek=32
+	else
+		dd if=$UBOOT_MMC of=$MMC_DEVICE bs=1024 seek=32 > /dev/null 2>&1
+	fi
+
+	if [[ -f $SUNXI_SPL ]];then
+		if $OPT_VERBOSE;then
+			dd if=$SUNXI_SPL of=$MMC_DEVICE bs=1024 seek=8
+		else
+			dd if=$SUNXI_SPL of=$MMC_DEVICE bs=1024 seek=8 > /dev/null 2>&1
+		fi
+	fi
+	DOES_UPDATE_BOOTLOADER=true
+}
+
+updateBootLoaderNAND(){
+	echoBlue "*** Updating bootloader on NAND"
+
+	mkdir -p $NAND_BOOT_MOUNT_POINT
+
+	if [[ -b $NAND1_DEVICE ]];then
+		mount $NAND1_DEVICE $NAND_BOOT_MOUNT_POINT
+	elif [[ -b $NANDA_DEVICE ]];then
+		mount $NANDA_DEVICE $NAND_BOOT_MOUNT_POINT
+	fi
+
+	uboot_nand=$(find $NAND_BOOT_MOUNT_POINT -name "$UBOOT_BIN")
+	
+	if $OPT_VERBOSE;then
+		cp -v $UBOOT_NAND $uboot_nand
+	else
+		cp $UBOOT_NAND $uboot_nand
+	fi
+
+	umount -l $NAND_BOOT_MOUNT_POINT
+
+	rm -rf $NAND_BOOT_MOUNT_POINT
+
+	DOES_UPDATE_BOOTLOADER=true
+}
+
 updateFirmware(){
 	echoBlue "*** Updating firmware"
+	if [[ -z "$1" ]];then
+		# which is the latest tag
+		tagname=$(eval ${GIT_CMD} tag -l ${BRANCH}* | tail -n 1)
+		if $OPT_VERBOSE;then
+			debug "Using tag $tagname which is latest in local repository"
+		fi
+	else
+		tagname="$1"
+		if $OPT_VERBOSE;then
+			debug "As requested using tag $tagname from local repository"
+		fi
+	fi
+
 	if ! $OPT_SKIP_KERNEL;then
 		updateKernel
 	else
@@ -240,10 +312,43 @@ updateFirmware(){
 	else
 		echoBlue "*** As requested, not updating modules"
 	fi
-	if $DOES_UPDATE_KERNEL;then
+	if [[ -b $MMC_DEVICE ]] && \
+		[[ "$SYS_INSTALL_TYPE" = "$SYS_INSTALL_TYPE_MMC" ]] && \
+		([[ -f $UBOOT_MMC ]] || [[ -f $SUNXI_SPL ]]);then
+		updateBootLoaderMMC
+	elif [[ -b $NAND_DEVICE ]] && \
+		[[ "$SYS_INSTALL_TYPE" = "$SYS_INSTALL_TYPE_NAND" ]] && \
+		[[ -f $UBOOT_NAND ]];then
+		updateBootLoaderNAND
+	fi
+	if $DOES_UPDATE_KERNEL || $DOES_UPDATE_BOOTLOADER;then
 		echoGreen "*** Update success, A reboot is needed for changes to take effects"
 	fi
-	eval ${GIT_CMD} rev-parse ${BRANCH} > "${FW_CURRENT_REV}"
+	echo "$tagname" > "${FW_CURRENT_REV}"
+}
+
+installUpdates(){
+	echoGreen "*** Checking updates from server"
+	debug "Checking updates from server ${FW_REPO}"
+
+	# get latest tag from remote
+	if [[ "$BRANCH" = "$BRANCH_A10" ]];then
+		fw_remote_tag=$(git ls-remote --tags ${FW_REPO} refs/tags/${BRANCH}*[^}] | awk '{print $2}' | sort -n | tail -n 1 | cut -c 11-)
+	elif [[ "$BRANCH" = "$BRANCH_A20" ]];then
+		fw_remote_tag=$(git ls-remote --tags ${FW_REPO} refs/tags/${BRANCH}*[^}] | awk '{print $2}' | sort -n | tail -n 1 | cut -c 11-)
+	fi
+
+	fw_local_tag=$(cat "${FW_CURRENT_REV}")
+
+	debug "Remote revision: ${fw_remote_tag}"
+	debug "Local revision: ${fw_local_tag}"
+
+	if [[ "$fw_local_tag" == "$fw_remote_tag" ]]; then
+		echoGreen "*** Your firmware is up to date"
+	else
+		updateFirmwareRepo 
+		updateFirmware $fw_remote_tag
+	fi
 }
 
 # main
@@ -254,54 +359,57 @@ fi
 
 #echoBlue "*** Cubian updater"
 
-debug "Root Path: ${ROOT_PATH}"
-debug "Update Kernel: $(skipOpt2str ${OPT_SKIP_KERNEL})"
-debug "Update Modules: $(skipOpt2str ${OPT_SKIP_MODULES})"
-
 if ! checkRootPath;then
 	echoRed "error: can't update, please correct ROOT_PATH. The current value is $ROOT_PATH"
 	exit
 fi
 
+debug "Root Path: ${ROOT_PATH}"
+debug "Update Kernel: $(skipOpt2str ${OPT_SKIP_KERNEL})"
+debug "Update Modules: $(skipOpt2str ${OPT_SKIP_MODULES})"
+
 determineBranch
 debug "Branch: $BRANCH"
+
+determineSysInstallType
+debug "SysInstallType: $SYS_INSTALL_TYPE"
 
 if [[ ! -f "${FW_REPO_LOCAL}/.git/config" ]];then
 	downloadFirmwareRepo
 fi
 
 if $REVERT_FIRMWARE;then
-	revertFirmwareRepo
-	updateFirmware
+	# revert to previous tag based on current tag
+	if [[ -f ${FW_CURRENT_REV} ]];then
+		echoRed "*** Revert firmware failed, missing file ${FW_CURRENT_REV}, try again with --reinstall then revert"
+		exit 2
+	fi
+	current_tagname=$(cat "${FW_CURRENT_REV}")
+	previous_tagname=$(eval ${GIT_CMD} tag -l ${BRANCH}* | awk '{if($1=="current_tag"){print p};p=$1}' current_tag=$current_tagname)
+	if [[ -z $previous_tagname ]];then
+		echoRed "*** Revert firmware failed, reached the oldest version"
+		exit 2
+	else
+		updateFirmware $previous_tagname
+	fi
 	exit 0
 fi
 
 if [[ ! -f "${FW_CURRENT_REV}" ]];then
 	updateFirmware
-	# assumes it's reinstallation
+	# provide reinstall flag but never installed, give a reinstall feedback
 	if $OPT_REINSTALL;then
 		echoGreen "*** Reinstall success"
 		exit 0
 	fi
 else
+	# perform reinstall
 	if $OPT_REINSTALL;then
-		updateFirmware
+		current_tagname=$(cat "${FW_CURRENT_REV}")
+		updateFirmware $current_tagname
 		echoGreen "*** Reinstall success"
 		exit 0
 	fi
-	echoGreen "*** Checking firmware updates from server"
-	debug "Checking updates from server ${FW_REPO}"
-	FW_REMOTE_REV=$(git ls-remote -h ${FW_REPO} refs/heads/${BRANCH} | awk '{print $1}')
-	FW_LOCAL_REV=$(cat "${FW_CURRENT_REV}")
-
-	debug "Remote revision: ${FW_REMOTE_REV}"
-	debug "Local revision: ${FW_LOCAL_REV}"
-
-	if [[ "$FW_LOCAL_REV" == "$FW_REMOTE_REV" ]]; then
-		echoGreen "*** Your firmware is up to date"
-	else
-		updateFirmwareRepo $FW_REMOTE_REV
-		updateFirmware
-	fi
+	installUpdates
 fi
 exit 0

@@ -1,9 +1,9 @@
 Package: cubian-update
-Version: 1.0-2
+Version: 1.0-3
 Section: admin
 Priority: optional
 Architecture: all
-Depends: git (>= 1.7)
+Depends: git (>= 1.7), coreutils(>= 8.13)
 Maintainer: cubian developer <sophiasmth@gmail.com>
 Description: update cubian
  This script can update cubian online
