@@ -219,9 +219,11 @@ downloadFirmwareRepo(){
 updateFirmwareRepo(){
 	echoBlue "*** Downloading updates (this may take a while)"
 	if $OPT_VERBOSE;then
-		eval ${GIT_CMD} pull origin
+		eval ${GIT_CMD} checkout $BRANCH
+		eval ${GIT_CMD} pull -v origin
 	else
-		eval ${GIT_CMD} pull origin > /dev/null 2>&1
+		eval ${GIT_CMD} checkout $BRANCH > /dev/null 2>&1
+		eval ${GIT_CMD} pull -q origin > /dev/null 2>&1
 	fi
 }
 
@@ -326,6 +328,12 @@ updateFirmware(){
 		if $OPT_VERBOSE;then
 			debug "As requested using tag $tagname from local repository"
 		fi
+	fi
+
+	if $OPT_VERBOSE;then
+		eval ${GIT_CMD} checkout tags/${tagname}
+	else
+		eval ${GIT_CMD} checkout tags/${tagname} > /dev/null 2>&1
 	fi
 
 	if ! $OPT_SKIP_KERNEL;then
