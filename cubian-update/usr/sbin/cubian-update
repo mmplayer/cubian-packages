@@ -406,6 +406,11 @@ installUpdates(){
 		fw_remote_tag=$(git ls-remote --tags ${FW_REPO} refs/tags/${BRANCH}*[^}] | awk '{print $2}' | sort -n | tail -n 1 | cut -c 11-)
 	fi
 
+	if [[ -z $fw_remote_tag ]];then
+		echoRed "error: fail to fetch update information"
+		exit 1
+	fi
+
 	fw_local_tag=$(cat "${FW_CURRENT_REV}")
 
 	debug "Remote revision: ${fw_remote_tag}"
