@@ -12,7 +12,8 @@ ROOT_PATH="${ROOT_PATH}/"
 FW_REPO="https://github.com/cubieplayer/cubian-firmware.git"
 FW_REPO_LOCAL="${ROOT_PATH}root/.cubian-firmware"
 FW_MOD_PATH="${ROOT_PATH}lib/modules"
-FW_CURRENT_REV="${FW_REPO_LOCAL}/.firmware_revision"
+FW_REVISION=".firmware_revision"
+FW_CURRENT_REV="${FW_REPO_LOCAL}/${FW_REVISION}"
 GIT_CMD="git --git-dir=\"${FW_REPO_LOCAL}/.git\" --work-tree=\"${FW_REPO_LOCAL}\""
 
 FSTAB="${ROOT_PATH}etc/fstab"
@@ -215,9 +216,21 @@ downloadFirmwareRepo(){
 	fi
 }
 
+forceCleanupRepo(){
+	debug "clean up repository"
+	if $OPT_VERBOSE;then
+		eval ${GIT_CMD} clean -dfxe ${FW_REVISION}
+	else
+		eval ${GIT_CMD} clean -qdfxe ${FW_REVISION}
+	fi
+}
+
 # update repository to lastest then checkout a specific tag
 updateFirmwareRepo(){
 	echoBlue "*** Downloading updates (this may take a while)"
+
+	forceCleanupRepo
+
 	branch_name=$(eval ${GIT_CMD} rev-parse --abbrev-ref HEAD)
 	if [[ "$BRANCH" != "$branch_name" ]];then
 		if $OPT_VERBOSE;then
@@ -335,6 +348,8 @@ updateFirmware(){
 			debug "As requested using tag $tagname from local repository"
 		fi
 	fi
+
+	forceCleanupRepo
 
 	if $OPT_VERBOSE;then
 		eval ${GIT_CMD} checkout tags/${tagname}
