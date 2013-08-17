@@ -40,6 +40,7 @@ SCRIPT_BIN_UPDATE="${FW_REPO_LOCAL}/boot/${NAME_SCRIPT_BIN}"
 OPT_VERBOSE=false
 OPT_REINSTALL=false
 OPT_TEST=false
+OPT_CLEAN=false
 REVERT_FIRMWARE=false
 OPT_SKIP_KERNEL=false
 OPT_SKIP_MODULES=false
@@ -75,6 +76,7 @@ Options:
   -h,--help            Show this message
   -r,--reinstall       Perform reinstallation of the updates
   -v,--verbos          Verbose output
+  -c,--clean           Clean up everything, redownload updates from server
      --revert-firmware Revert firmware to previous release. You may executes 
                        the revert command mutiple times in order to update the
                        firmware to historical versions
@@ -83,9 +85,10 @@ Options:
 EOF
 }
 
-if ! OPTIONS=$(getopt -o hrvt -l help \
+if ! OPTIONS=$(getopt -o hrvct -l help \
 -l reinstall \
 -l verbose \
+-l clean \
 -l revert-firmware \
 -l skip-kernel \
 -l skip-modules \
@@ -107,6 +110,9 @@ while [ $# -gt 0 ];do
 			;;
 		-v|--verbose) 
 			OPT_VERBOSE=true
+			;;
+		-c|--clean) 
+			OPT_CLEAN=true
 			;;
 		-t) 
 			OPT_TEST=true
@@ -454,6 +460,15 @@ fi
 
 if $OPT_TEST;then
 	FW_REPO="https://github.com/mmplayer/cubian-update.git"
+fi
+
+if $OPT_CLEAN;then
+	if $OPT_VERBOSE;then
+		rm -rfv $FW_REPO_LOCAL
+	else
+		rm -rf $FW_REPO_LOCAL
+	fi
+	exit 0
 fi
 
 debug "Update From: ${FW_REPO}"
