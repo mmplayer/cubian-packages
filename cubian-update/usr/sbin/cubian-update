@@ -230,8 +230,10 @@ downloadFirmwareRepo(){
 forceCleanupRepo(){
 	debug "clean up repository"
 	if $OPT_VERBOSE;then
+		eval ${GIT_CMD} checkout .
 		eval ${GIT_CMD} clean -dfxe ${FW_REVISION}
 	else
+		eval ${GIT_CMD} -q checkout .
 		eval ${GIT_CMD} clean -qdfxe ${FW_REVISION}
 	fi
 }
