@@ -463,11 +463,13 @@ if $OPT_TEST;then
 fi
 
 if $OPT_CLEAN;then
+	echoBlue "*** Perform clean"
 	if $OPT_VERBOSE;then
 		rm -rfv $FW_REPO_LOCAL
 	else
 		rm -rf $FW_REPO_LOCAL
 	fi
+	echoGreen "*** Clean success"
 	exit 0
 fi
 
