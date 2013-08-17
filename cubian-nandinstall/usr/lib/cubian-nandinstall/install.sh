@@ -20,13 +20,13 @@
 
 set -e
 
-PWD="`pwd`"
-CWD=$(cd "$(dirname "$0")"; pwd)
+CWD="/usr/lib/cubian-nandinstall"
 
 MMC_DEVICE="/dev/mmcblk0"
 NAND_DEVICE="/dev/nand"
 NANDA_DEVICE="/dev/nanda"
 NANDB_DEVICE="/dev/nandb"
+NANDC_DEVICE="/dev/nandc"
 NAND1_DEVICE="/dev/nand1"
 NAND2_DEVICE="/dev/nand2"
 NAND3_DEVICE="/dev/nand3"
@@ -49,7 +49,7 @@ NAND_ROOT_DEVICE=
 NAND_MAGIC_DEVICE=
 
 DEVICE_TYPE=
-MACHID=
+MACH_ID=
 
 echoBlue(){
 	echo "${COLOR_BLUE}${1}${COLOR_NORMAL}"
@@ -160,7 +160,7 @@ if [[ $? -ne 0 ]];then
 fi
 
 ### determine device
-ls /lib/modules | grep 'sun7i\|3.3.0+' > /dev/null 2>&1
+uname -r | grep 'sun7i\|3.3.0+' > /dev/null 2>&1
 if [[ $? -eq 0 ]];then
 	DEVICE_TYPE="a20"
 
@@ -185,27 +185,30 @@ CUBIAN_PART="${CWD}/${DEVICE_TYPE}/cubian_nand.gz"
 # use 0f35 for kernel 3.3.0
 # use 10bb for kernel 3.4.43
 # copy correct u-boot.bin
-cp -f "${CWD}/${DEVICE_TYPE}/u-boot-${MACHID}.bin" \
-	"${CWD}/${DEVICE_TYPE}/bootloader/linux/"
+rm -f ${CWD}/${DEVICE_TYPE}/bootloader/linux/u-boot*.bin
+cp -f "${CWD}/${DEVICE_TYPE}/u-boot-${MACH_ID}.bin" \
+	"${CWD}/${DEVICE_TYPE}/bootloader/linux/u-boot.bin"
 
 ### The bootloader is ready now
 BOOTLOADER="${CWD}/${DEVICE_TYPE}/bootloader"
 
 ### set nand device
 if [[ -b $NANDA_DEVICE ]];then
-	NAND_BOOT_DEVICE= "$NANDA_DEVICE"
+	NAND_BOOT_DEVICE="$NANDA_DEVICE"
 elif [[ -b $NAND1_DEVICE ]];then
-	NAND_BOOT_DEVICE= "$NAND1_DEVICE"
+	NAND_BOOT_DEVICE="$NAND1_DEVICE"
 fi
 
-if [[ -b "$NANDB_DEVICE" ]];then
-	NAND_ROOT_DEVICE="$NANDB_DEVICE"
-elif [[ -b "$NAND3_DEVICE" ]];then
-	NAND_ROOT_DEVICE="$NAND3_DEVICE"
-fi
-
-if [[ -b "$NAND2_DEVICE" ]];then
-	NAND_MAGIC_DEVICE="$NAND2_DEVICE"
+if [[ "$DEVICE_TYPE" = "a10" ]];then
+	NAND_ROOT_DEVICE="$NANDA_DEVICE"
+elif [[ "$DEVICE_TYPE" = "a20" ]];then
+	if [[ -b "$NANDC_DEVICE" ]];then
+		NAND_ROOT_DEVICE="$NANDC_DEVICE"
+		NAND_MAGIC_DEVICE="$NANDB_DEVICE"
+	elif [[ -b "$NAND3_DEVICE" ]];then
+		NAND_ROOT_DEVICE="$NAND3_DEVICE"
+		NAND_MAGIC_DEVICE="$NAND2_DEVICE"
+	fi
 fi
 
 if nandPartitionOK;then
