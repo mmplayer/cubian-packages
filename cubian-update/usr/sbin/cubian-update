@@ -9,7 +9,7 @@ ROOT_PATH=$(echo "${ROOT_PATH}" | sed -e "s/\/*$//")
 # add a traingling slash
 ROOT_PATH="${ROOT_PATH}/"
 
-FW_REPO="https://github.com/cubieplayer/cubian-firmware.git"
+FW_REPO="https://github.com/cubieplayer/cubian-update.git"
 FW_REPO_LOCAL="${ROOT_PATH}root/.cubian-firmware"
 FW_MOD_PATH="${ROOT_PATH}lib/modules"
 FW_REVISION=".firmware_revision"
@@ -139,6 +139,17 @@ debug(){
 	if $OPT_VERBOSE;then
 		echo $1
 	fi
+}
+
+backup(){
+	opt="-f"
+	if $OPT_VERBOSE;then
+		opt="${opt}v"
+	fi
+	if [[ -d $1 ]];then
+		opt="${opt}r"
+	fi
+	cp $opt $1 "$1.bak"
 }
 
 skipOpt2str(){
@@ -319,6 +330,7 @@ updateBootLoaderNAND(){
 
 	if [[ -f $UENV_TXT_UPDATE ]];then
 		uenv_txt_dest="${ROOT_PATH}boot/${NAME_UENV_TXT}"
+		backup $uenv_txt_dest
 		if $OPT_VERBOSE;then
 			debug "Update uEnv.txt"
 			cp -v $UENV_TXT_UPDATE $uenv_txt_dest
@@ -380,6 +392,7 @@ updateFirmware(){
 
 	if [[ -f $SCRIPT_BIN_UPDATE ]];then
 		script_bin_dest="${ROOT_PATH}boot/${NAME_SCRIPT_BIN}"
+		backup $script_bin_dest
 		if $OPT_VERBOSE;then
 			debug "update script.bin"
 			cp -v $SCRIPT_BIN_UPDATE $script_bin_dest
