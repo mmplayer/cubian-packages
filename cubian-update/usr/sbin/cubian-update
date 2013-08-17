@@ -451,7 +451,7 @@ if ! checkRootPath;then
 fi
 
 if $OPT_TEST;then
-	FW_REPO="https://github.com/mmplayer/cubian-firmware.git"
+	FW_REPO="https://github.com/mmplayer/cubian-update.git"
 fi
 
 debug "Update From: ${FW_REPO}"
