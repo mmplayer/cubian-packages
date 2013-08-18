@@ -221,12 +221,17 @@ determineSysInstallType(){
 echoBlue(){
 	echo "${COLOR_BLUE}${1}${COLOR_NORMAL}"
 }
+
 echoRed(){
 	echo "${COLOR_RED}${1}${COLOR_NORMAL}"
 }
 
 echoGreen(){
 	echo "${COLOR_GREEN}${1}${COLOR_NORMAL}"
+}
+
+echoYellow(){
+	echo "${COLOR_YELLOW}${1}${COLOR_NORMAL}"
 }
 
 downloadFirmwareRepo(){
@@ -435,7 +440,7 @@ updateFirmware(){
 		acquireMMCDevice
 		updateBootLoaderMMC
 	else
-		echoRed "warning: failed to update bootloader"
+		echoYellow "warning: bootloader is not updated"
 	fi
 
 	if [[ -f $SCRIPT_BIN_UPDATE ]];then
