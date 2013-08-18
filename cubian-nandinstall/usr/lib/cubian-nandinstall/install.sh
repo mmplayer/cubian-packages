@@ -202,7 +202,7 @@ elif [[ -b $NAND1_DEVICE ]];then
 fi
 
 if [[ "$DEVICE_TYPE" = "a10" ]];then
-	NAND_ROOT_DEVICE="$NANDA_DEVICE"
+	NAND_ROOT_DEVICE="$NANDB_DEVICE"
 elif [[ "$DEVICE_TYPE" = "a20" ]];then
 	if [[ -b "$NANDC_DEVICE" ]];then
 		NAND_ROOT_DEVICE="$NANDC_DEVICE"
