@@ -185,9 +185,11 @@ CUBIAN_PART="${CWD}/${DEVICE_TYPE}/cubian_nand.gz"
 # use 0f35 for kernel 3.3.0
 # use 10bb for kernel 3.4.43
 # copy correct u-boot.bin
-rm -f ${CWD}/${DEVICE_TYPE}/bootloader/linux/u-boot*.bin
-cp -f "${CWD}/${DEVICE_TYPE}/u-boot-${MACH_ID}.bin" \
-	"${CWD}/${DEVICE_TYPE}/bootloader/linux/u-boot.bin"
+if [[ "$DEVICE_TYPE" = "a20" ]];then
+	rm -f ${CWD}/${DEVICE_TYPE}/bootloader/linux/u-boot*.bin
+	cp -f "${CWD}/${DEVICE_TYPE}/u-boot-${MACH_ID}.bin" \
+		"${CWD}/${DEVICE_TYPE}/bootloader/linux/u-boot.bin"
+fi
 
 ### The bootloader is ready now
 BOOTLOADER="${CWD}/${DEVICE_TYPE}/bootloader"
