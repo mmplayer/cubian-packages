@@ -88,6 +88,7 @@ done
 
 formatNand(){
 tar -xzOf $CUBIAN_PART | dd of=$NAND_DEVICE
+sync
 }
 
 nandPartitionOK(){
