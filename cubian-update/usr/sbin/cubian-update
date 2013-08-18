@@ -10,9 +10,9 @@ ROOT_PATH=$(echo "${ROOT_PATH}" | sed -e "s/\/*$//")
 ROOT_PATH="${ROOT_PATH}/"
 
 FW_REPO="https://github.com/cubieplayer/cubian-update.git"
-FW_REPO_LOCAL="${ROOT_PATH}root/.cubian-firmware"
+FW_REPO_LOCAL="${ROOT_PATH}root/.cubian-update"
 FW_MOD_PATH="${ROOT_PATH}lib/modules"
-FW_REVISION=".firmware_revision"
+FW_REVISION=".update_revision"
 FW_CURRENT_REV="${FW_REPO_LOCAL}/${FW_REVISION}"
 GIT_CMD="git --git-dir=\"${FW_REPO_LOCAL}/.git\" --work-tree=\"${FW_REPO_LOCAL}\""
 
@@ -61,7 +61,7 @@ SYS_INSTALL_TYPE_MMC="mmc"
 
 SYS_INSTALL_TYPE=
 
-BRANCH_A1O="a10"
+BRANCH_A10="a10"
 BRANCH_A20="a20"
 BRANCH=
 
@@ -89,6 +89,7 @@ if ! OPTIONS=$(getopt -o hrvct -l help \
 -l reinstall \
 -l verbose \
 -l clean \
+-l revert \
 -l revert-firmware \
 -l skip-kernel \
 -l skip-modules \
@@ -117,7 +118,7 @@ while [ $# -gt 0 ];do
 		-t) 
 			OPT_TEST=true
 			;;
-		--revert-firmware)
+		--revert|--revert-firmware)
 			REVERT_FIRMWARE=true
 			;;
 		--skip-kernel)
@@ -183,24 +184,35 @@ checkRootPath(){
 	return 0
 }
 
+determineBranchManually(){
+while true;do
+	read -p "${COLOR_YELLOW}What's your device type, a10 or a20?${COLOR_NORMAL}" given_branch
+	case $given_branch in
+		[aA]10) BRANCH="$BRANCH_A10";break;;
+		[aA]20) BRANCH="$BRANCH_A20";break;;
+		*) echo "Invalid device type. Please type a10 or a20."
+	esac
+done
+}
+
 determineBranch(){
 	set +e
-	# here we use lib/modules to determine branch because we tends to support cross update
-	ls ${ROOT_PATH}lib/modules | grep 'sun7i\|3.3.0+' > /dev/null 2>&1
-	if [[ $? -eq 0 ]];then
-		BRANCH="$BRANCH_A20"
-	else
+	if [[ "$ROOT_PATH" = "/" ]];then
+		uname -r | grep 'sun7i\|3.3.0+' > /dev/null 2>&1 && \
+		BRANCH="$BRANCH_A20" || \
 		BRANCH="$BRANCH_A10"
+	else
+		determineBranchManually
 	fi
 	set -e
 }
 
 determineSysInstallType(){
 	set +e
-	cat $FSTAB | awk '{if($2=="/") {print $1}}' | grep $MMC_DEVICE > /dev/null 2>&1
-	if [[ $? -eq 0 ]];then
+	cat $FSTAB | awk '{if($2=="/") {print $1}}' | grep $MMC_DEVICE > /dev/null 2>&1 && \
 		SYS_INSTALL_TYPE="$SYS_INSTALL_TYPE_MMC"
-	else
+	if [[ -z $SYS_INSTALL_TYPE ]];then
+		cat $FSTAB | awk '{if($2=="/") {print $1}}' | grep $NAND_DEVICE > /dev/null 2>&1 && \
 		SYS_INSTALL_TYPE="$SYS_INSTALL_TYPE_NAND"
 	fi
 	set -e
@@ -240,7 +252,7 @@ forceCleanupRepo(){
 		eval ${GIT_CMD} checkout .
 		eval ${GIT_CMD} clean -dfxe ${FW_REVISION}
 	else
-		eval ${GIT_CMD} -q checkout .
+		eval ${GIT_CMD} checkout -q  .
 		eval ${GIT_CMD} clean -qdfxe ${FW_REVISION}
 	fi
 }
@@ -292,6 +304,24 @@ updateModules(){
 			depmod -b "${ROOT_PATH}" -a $(basename "${DIR}")
 	done
 	DOES_UPDATE_MODULES=true
+}
+
+acquireMMCDevice(){
+while true;do
+	read -p "${COLOR_YELLOW}Please type in your SD-device(eg. /dev/sdb).${COLOR_NORMAL}" given_device
+	case $given_device in
+		*)
+			if [[ -b $given_device ]];then
+				MMC_DEVICE="$given_device"
+				break;
+			elif [[ -z $given_device ]];then
+				echo "device can not be empty"
+			else
+				echo "$given_device is not valid block device"
+			fi
+			;;
+	esac
+done
 }
 
 updateBootLoaderMMC(){
@@ -397,6 +427,15 @@ updateFirmware(){
 		[[ "$SYS_INSTALL_TYPE" = "$SYS_INSTALL_TYPE_NAND" ]] && \
 		([[ -f $UBOOT_NAND_UPDATE ]] || [[ -f $UENV_TXT_UPDATE ]]);then
 		updateBootLoaderNAND
+	elif [[ ! -b $MMC_DEVICE ]] && \
+		[[ "$ROOT_PATH" != "/" ]] && \
+		[[ "$SYS_INSTALL_TYPE" = "$SYS_INSTALL_TYPE_MMC" ]] && \
+		([[ -f $UBOOT_MMC_UPDATE ]] || [[ -f $SUNXI_SPL_UPDATE ]]);then
+		# ask user for MMC device
+		acquireMMCDevice
+		updateBootLoaderMMC
+	else
+		echoRed "warning: failed to update bootloader"
 	fi
 
 	if [[ -f $SCRIPT_BIN_UPDATE ]];then
@@ -480,9 +519,17 @@ debug "Update Kernel: $(skipOpt2str ${OPT_SKIP_KERNEL})"
 debug "Update Modules: $(skipOpt2str ${OPT_SKIP_MODULES})"
 
 determineBranch
+if [[ -z $BRANCH ]];then
+	echoRed "error: can't update, failed to detect device type"
+	exit
+fi
 debug "Branch: $BRANCH"
 
 determineSysInstallType
+if [[ -z $SYS_INSTALL_TYPE ]];then
+	echoRed "error: can't update, failed to detect system type"
+	exit
+fi
 debug "SysInstallType: $SYS_INSTALL_TYPE"
 
 if [[ ! -f "${FW_REPO_LOCAL}/.git/config" ]];then
