@@ -41,7 +41,7 @@ OPT_VERBOSE=false
 OPT_REINSTALL=false
 OPT_TEST=false
 OPT_CLEAN=false
-REVERT_FIRMWARE=false
+OPT_REVERT_FIRMWARE=false
 OPT_SKIP_KERNEL=false
 OPT_SKIP_MODULES=false
 
@@ -119,7 +119,7 @@ while [ $# -gt 0 ];do
 			OPT_TEST=true
 			;;
 		--revert|--revert-firmware)
-			REVERT_FIRMWARE=true
+			OPT_REVERT_FIRMWARE=true
 			;;
 		--skip-kernel)
 			OPT_SKIP_KERNEL=true
@@ -198,7 +198,7 @@ done
 determineBranch(){
 	set +e
 	if [[ "$ROOT_PATH" = "/" ]];then
-		uname -r | grep 'sun7i\|3.3.0+' > /dev/null 2>&1 && \
+		uname -r | grep -q 'sun7i\|3.3.0+' && \
 		BRANCH="$BRANCH_A20" || \
 		BRANCH="$BRANCH_A10"
 	else
@@ -209,10 +209,10 @@ determineBranch(){
 
 determineSysInstallType(){
 	set +e
-	cat $FSTAB | awk '{if($2=="/") {print $1}}' | grep $MMC_DEVICE > /dev/null 2>&1 && \
+	cat $FSTAB | awk '{if($2=="/") {print $1}}' | grep -q $MMC_DEVICE && \
 		SYS_INSTALL_TYPE="$SYS_INSTALL_TYPE_MMC"
 	if [[ -z $SYS_INSTALL_TYPE ]];then
-		cat $FSTAB | awk '{if($2=="/") {print $1}}' | grep $NAND_DEVICE > /dev/null 2>&1 && \
+		cat $FSTAB | awk '{if($2=="/") {print $1}}' | grep -q $NAND_DEVICE && \
 		SYS_INSTALL_TYPE="$SYS_INSTALL_TYPE_NAND"
 	fi
 	set -e
@@ -541,7 +541,7 @@ if [[ ! -f "${FW_REPO_LOCAL}/.git/config" ]];then
 	downloadFirmwareRepo
 fi
 
-if $REVERT_FIRMWARE;then
+if $OPT_REVERT_FIRMWARE;then
 	# revert to previous tag based on current tag
 	if [[ ! -f ${FW_CURRENT_REV} ]];then
 		echoRed "*** Revert firmware failed, missing file ${FW_CURRENT_REV}, try again with --reinstall then revert"
