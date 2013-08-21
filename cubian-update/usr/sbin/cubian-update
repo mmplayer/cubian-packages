@@ -199,7 +199,7 @@ done
 
 determineBranch(){
 	set +e
-	if [[ "$ROOT_PATH" = "/" ]];then
+	if [[ "$ROOT_PATH" = "/" ]] && [[ $(ls -di / | awk '{print $1}') = "2" ]];then
 		uname -r | grep -q 'sun7i\|3.3.0+' && \
 		BRANCH="$BRANCH_A20" || \
 		BRANCH="$BRANCH_A10"
