@@ -1,0 +1,172 @@
+#!/bin/bash 
+
+DEVICE=
+PART_PREFIX=
+ROOTFS_PART=
+PROPORTION=
+
+NAME_MMC_DEVICE="mmcblk0"
+NAME_HDD_DEVICE="sda"
+
+COLOR_NORMAL=$(echo -e "\033[m")
+COLOR_BLUE=$(echo -e "\033[36m")
+COLOR_GREEN=$(echo -e "\033[32m")
+COLOR_RED=$(echo -e "\033[31m")
+COLOR_YELLOW=$(echo -e "\033[33m")
+
+isnumber() { test "$1" && printf '%d' "$1" >/dev/null 2>&1; }
+
+promptyn () {
+while true; do
+  read -p "$1 " yn
+  case $yn in
+    [Yy]* ) return 0;;
+    [Nn]* ) return 1;;
+    * ) echo "${COLOR_YELLOW}Please answer yes or no.${COLOR_NORMAL}";;
+  esac
+done
+}
+
+usage(){
+cat <<EOF
+Usage: $0 device [proportion]
+
+device         The device which cubian installed on
+proportion     [1-100] The space will occupied by cubian on device
+
+eg. $0 /dev/mmcblk0 50
+EOF
+}
+
+# env check
+if [ "`id -u`" -ne "0" ]; then
+  echo "${COLOR_RED}This script needs to be run as root, try again with sudo${COLOR_NORMAL}"
+  exit -1
+fi
+
+if [[ -z $1 ]];then
+  echo "${COLOR_RED}error: device is required${COLOR_NORMAL}"
+  usage
+  exit 1
+fi
+
+DEVICE="$1"
+
+# device check
+if [[ ! -b $DEVICE ]];then
+  echo "${COLOR_RED}error: not a block device ${DEVICE}${COLOR_NORMAL}"
+  exit 1
+fi
+
+grep -q "${NAME_MMC_DEVICE}"<<<${DEVICE} && \
+PART_PREFIX="${NAME_MMC_DEVICE}p"
+
+grep -q "${NAME_HDD_DEVICE}"<<<${DEVICE} && \
+PART_PREFIX="${NAME_HDD_DEVICE}"
+
+part_count=$(grep -c "${PART_PREFIX}[0-9][0-9]*" /proc/partitions)
+if [[ "$part_count" != "1" ]];then
+	echo "${COLOR_RED}error: more than 1 partiton on ${DEVICE}${COLOR_NORMAL}"
+	exit 1
+fi
+
+# assume rootfs part is the first partition
+ROOTFS_PART="/dev/${PART_PREFIX}1"
+if [[ ! -b $ROOTFS_PART ]];then
+	echo "${COLOR_RED}error: not a block device ${ROOTFS_PART}${COLOR_NORMAL}"
+	exit 1
+fi
+
+# size check
+if [[ -z $2 ]];then
+PROPORTION=100
+else
+  if ! isnumber $2;then
+	echo "${COLOR_RED}error: need a number${COLOR_NORMAL}"
+	exit 1
+  else
+	PROPORTION=$2
+  fi
+fi
+
+MBR_BAK="/root/mbr.bak"
+
+echo "DEVICE: ${DEVICE}"
+echo "ROOTFS PARTITION: ${ROOTFS_PART}"
+echo "MBR BACKUP: ${MBR_BAK}"
+# end basic check
+
+IFS=
+
+PART_INFO=$(fdisk -l $DEVICE)
+SECTORS_TOTAL=$(echo $PART_INFO | grep total | awk '{print $8}')
+PART_START=$(echo $PART_INFO | grep $ROOTFS_PART | awk '{print $2}')
+
+if [[ -z $PART_START ]];then
+	echo "${COLOR_RED}error: get PART_START${COLOR_NORMAL}"
+	exit 1
+fi
+
+if [[ -z $SECTORS_TOTAL ]];then
+	echo "${COLOR_RED}error: get SECTORS_TOTAL${COLOR_NORMAL}"
+	exit 1
+fi
+
+echo "ROOTFS PARTITION START: ${PART_START}"
+
+# make sure PART_START is a number
+PART_START=$(expr $PART_START + 0)
+SECTORS_END_MAX=$(expr $SECTORS_TOTAL - 1)
+echo "SECTORS TOTAL MAX: ${SECTORS_END_MAX}"
+echo "PROPORTION: ${PROPORTION}"
+
+SECTORS_END=$(expr $SECTORS_END_MAX * ${PROPORTION} / 100)
+echo "SECTORS END: ${SECTORS_END}"
+
+clear
+if ! promptyn \
+"
+${COLOR_RED}*** IMPORTANT NOTICE, PLEASE READ CAREFULLY ***${COLOR_NORMAL}
+
+This script use fdisk to delete the first partition on SD-card then re-create
+it with a larger partition size.
+
+Your SD-card should only contains ${COLOR_RED}ONE${COLOR_NORMAL} partition for rootfs, otherwise it won't
+work. If you are using cubian before r4, you have to delete the swap partition
+manaually, then run this script.
+
+The scirpt is recommended on a clean install of cubian. Otherwise you should 
+backup your important files on your SD-card because modify partition table is 
+always risky.
+
+The current working partition table will be saved to $MBR_BAK, you may save it
+to ${COLOR_RED}ANOTHER${COLOR_NORMAL} storage media (eg. nand). You can restore the partion table 
+later without losing any data if any problem happens by running the following command
+
+dd if={PATH_TO_MBR_BAK} of=/dev/{MMC_DEVICE} bs=1 count=64 skip=446 seek=446
+
+***
+
+Are you sure to continue?[y/n]";then
+	exit 0
+fi
+
+dd if=$DEVICE of=$MBR_BAK bs=512 count=1>/dev/null 2>&1
+
+echo "
+p
+d
+1
+p
+n
+p
+1
+${PART_START}
+${SECTORS_END}
+p
+w
+q
+" | fdisk $DEVICE > /dev/null
+
+echo \
+"${COLOR_GREEN}*** success, please reboot then run ${COLOR_NORMAL}${COLOR_BLUE}resize2fs ${ROOTFS_PART}${COLOR_NORMAL}${COLOR_GREEN}after system is up${COLOR_NORMAL}"
