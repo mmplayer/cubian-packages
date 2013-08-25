@@ -17,12 +17,15 @@ COLOR_YELLOW=$(echo -e "\033[33m")
 isnumber() { test "$1" && printf '%d' "$1" >/dev/null 2>&1; }
 
 promptyn () {
+msg=$1
 while true; do
-  read -p "$1 " yn
+  read -p "${msg}" yn
   case $yn in
     [Yy]* ) return 0;;
     [Nn]* ) return 1;;
-    * ) echo "${COLOR_YELLOW}Please answer yes or no.${COLOR_NORMAL}";;
+    * )
+        msg=""
+        echo "${COLOR_YELLOW}Please answer yes or no.${COLOR_NORMAL}";;
   esac
 done
 }
