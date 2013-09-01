@@ -2,7 +2,7 @@
 
 set -e
 
-VERSION="1.0.7"
+VERSION="1.0.8"
 
 RAW_ARGS="$@"
 
@@ -18,7 +18,9 @@ ROOT_PATH=$(echo "${ROOT_PATH}" | sed -e "s/\/*$//")
 # add a traingling slash
 ROOT_PATH="${ROOT_PATH}/"
 
-FW_REPO="https://github.com/cubieplayer/cubian-update.git"
+FW_REPO=
+FW_REPO_RELEASE="https://github.com/cubieplayer/cubian-update.git"
+FW_REPO_TEST="https://github.com/mmplayer/cubian-update.git"
 FW_REPO_LOCAL="${ROOT_PATH}root/.cubian-update"
 FW_MOD_PATH="${ROOT_PATH}lib/modules"
 FW_REVISION=".update_revision"
@@ -257,6 +259,15 @@ downloadFirmwareRepo(){
 	if [[ ${RETVAL} -ne 0 ]]; then
 		echoRed "!!! Failed to download firmware,Please check internet connection"
 		exit 1
+	fi
+}
+
+setFirmwareRepoUrl(){
+	debug "set firmware url to ${FW_REPO}"
+	if $OPT_VERBOSE;then
+		eval ${GIT_CMD} remote -v set-url origin $FW_REPO
+	else
+		eval ${GIT_CMD} remote set-url origin $FW_REPO
 	fi
 }
 
@@ -547,7 +558,9 @@ if ! checkRootPath;then
 fi
 
 if $OPT_TEST;then
-	FW_REPO="https://github.com/mmplayer/cubian-update.git"
+	FW_REPO="$FW_REPO_RELEASE"
+else
+	FW_REPO="$FW_REPO_TEST"
 fi
 
 if $OPT_CLEAN;then
@@ -584,6 +597,7 @@ if [[ ! -f "${FW_REPO_LOCAL}/.git/config" ]];then
 	downloadFirmwareRepo
 fi
 
+setFirmwareRepoUrl
 if $OPT_REVERT_FIRMWARE;then
 	# revert to previous tag based on current tag
 	if [[ ! -f ${FW_CURRENT_REV} ]];then
