@@ -256,15 +256,15 @@ downloadFirmwareRepo(){
 forceCleanupRepo(){
 	debug "clean up repository"
 	if $OPT_VERBOSE;then
-		eval ${GIT_CMD} checkout .
+		eval ${GIT_CMD} reset --hard
 		eval ${GIT_CMD} clean -dfxe ${FW_REVISION}
 	else
-		eval ${GIT_CMD} checkout -q  .
+		eval ${GIT_CMD} reset -q --hard
 		eval ${GIT_CMD} clean -qdfxe ${FW_REVISION}
 	fi
 }
 
-# update repository to lastest then checkout a specific tag
+# update repository to lastest then checkout a particular tag
 updateFirmwareRepo(){
 	echoBlue "*** Downloading updates (this may take a while)"
 
