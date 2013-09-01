@@ -2,7 +2,14 @@
 
 set -e
 
+VERSION="1.0.7"
+
+RAW_ARGS="$@"
+
 GIT_SSL_NO_VERIFY=1
+
+UPDATE_SELF=${UPDATE_SELF:-1}
+SELF_UPDATE_SCRIPT="/root/.cubian-update-self.sh"
 
 # normalize path
 ROOT_PATH=${ROOT_PATH:-"/"}
@@ -492,13 +499,47 @@ installUpdates(){
 	fi
 }
 
+updateSelf(){
+	echoBlue "*** Performing self-update"
+
+if $OPT_VERBOSE;then
+	cat > $SELF_UPDATE_SCRIPT <<EOF
+set -e
+
+rm -- "\$0"
+
+apt-get update
+apt-get install -y cubian-update
+
+exec env UPDATE_SELF=0 /bin/bash "$0" "$RAW_ARGS"
+EOF
+else
+	cat > $SELF_UPDATE_SCRIPT <<EOF
+set -e
+
+rm -- "\$0"
+
+apt-get update > /dev/null 2>&1
+apt-get install -y cubian-update > /dev/null 2>&1
+
+exec env UPDATE_SELF=0 /bin/bash "$0" "$RAW_ARGS"
+EOF
+fi
+exec /bin/bash $SELF_UPDATE_SCRIPT
+}
+
 # main
 if [[ ${EUID} -ne 0 ]]; then
 	echoRed "!!! This tool must be run as root"
 	exit 1
 fi
 
-#echoBlue "*** Cubian updater"
+if [[ ${UPDATE_SELF} -ne 0 ]]; then
+	updateSelf
+	exit 0
+else
+	echoBlue "*** Cubian updater v${VERSION} http://cubian.org"
+fi
 
 if ! checkRootPath;then
 	echoRed "error: can't update, please correct ROOT_PATH. The current value is $ROOT_PATH"
