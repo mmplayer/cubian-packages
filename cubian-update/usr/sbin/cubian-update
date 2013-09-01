@@ -2,7 +2,7 @@
 
 set -e
 
-VERSION="1.0.8"
+VERSION="1.0.9"
 
 RAW_ARGS="$@"
 
@@ -331,6 +331,17 @@ updateModules(){
 	DOES_UPDATE_MODULES=true
 }
 
+updateFS(){
+	echoBlue "*** Updating fs"
+	if $OPT_VERBOSE;then
+		echo -n "${COLOR_GRAY}"
+		cp -vR "${FW_REPO_LOCAL}/fs/"* "${ROOT_PATH}"
+		echo -n "${NORMAL}"
+	else
+		cp -R "${FW_REPO_LOCAL}/fs/"* "${ROOT_PATH}"
+	fi
+}
+
 acquireMMCDevice(){
 while true;do
 	read -p "${COLOR_YELLOW}Please type in your SD-device(eg. /dev/sdb).${COLOR_NORMAL}" given_device
@@ -438,10 +449,15 @@ updateFirmware(){
 	else
 		echoBlue "*** As requested, not updating kernel"
 	fi
+
 	if ! $OPT_SKIP_MODULES;then
 		updateModules
 	else
 		echoBlue "*** As requested, not updating modules"
+	fi
+
+	if [[ -d "${FW_REPO_LOCAL}/fs" ]];then
+		updateFS
 	fi
 
 	if [[ -b $MMC_DEVICE ]] && \
@@ -558,9 +574,9 @@ if ! checkRootPath;then
 fi
 
 if $OPT_TEST;then
-	FW_REPO="$FW_REPO_RELEASE"
-else
 	FW_REPO="$FW_REPO_TEST"
+else
+	FW_REPO="$FW_REPO_RELEASE"
 fi
 
 if $OPT_CLEAN;then
