@@ -2,7 +2,7 @@
 
 set -e
 
-VERSION="1.0.9"
+VERSION="1.1.0"
 
 RAW_ARGS="$@"
 
@@ -19,9 +19,10 @@ ROOT_PATH=$(echo "${ROOT_PATH}" | sed -e "s/\/*$//")
 ROOT_PATH="${ROOT_PATH}/"
 
 FW_REPO=
-FW_REPO_RELEASE="https://github.com/cubieplayer/cubian-update.git"
-FW_REPO_TEST="https://github.com/mmplayer/cubian-update.git"
-FW_REPO_LOCAL="${ROOT_PATH}root/.cubian-update"
+FW_REPO_RELEASE="https://github.com/cubieplayer/cubian-updates.git"
+FW_REPO_TEST="https://github.com/mmplayer/cubian-updates.git"
+FW_REPO_LOCAL_OLD="${ROOT_PATH}root/.cubian-update"
+FW_REPO_LOCAL="${ROOT_PATH}root/.cubian-updates"
 FW_MOD_PATH="${ROOT_PATH}lib/modules"
 FW_REVISION=".update_revision"
 FW_CURRENT_REV="${FW_REPO_LOCAL}/${FW_REVISION}"
@@ -559,6 +560,11 @@ exec /bin/bash $SELF_UPDATE_SCRIPT
 if [[ ${EUID} -ne 0 ]]; then
 	echoRed "!!! This tool must be run as root"
 	exit 1
+fi
+
+if [[ -d $FW_REPO_LOCAL_OLD ]];then
+	debug "remove old repository $FW_REPO_LOCAL_OLD"
+	rm -rf $FW_REPO_LOCAL_OLD
 fi
 
 if [[ ${UPDATE_SELF} -ne 0 ]]; then
