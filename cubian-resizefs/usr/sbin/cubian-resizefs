@@ -172,4 +172,4 @@ q
 " | fdisk $DEVICE > /dev/null
 
 echo \
-"${COLOR_GREEN}*** success, please reboot then run ${COLOR_NORMAL}${COLOR_BLUE}resize2fs ${ROOTFS_PART}${COLOR_NORMAL}${COLOR_GREEN}after system is up${COLOR_NORMAL}"
+"${COLOR_GREEN}*** success, please reboot then run ${COLOR_NORMAL}${COLOR_BLUE}resize2fs ${ROOTFS_PART}${COLOR_NORMAL}${COLOR_GREEN} after system is up${COLOR_NORMAL}"
