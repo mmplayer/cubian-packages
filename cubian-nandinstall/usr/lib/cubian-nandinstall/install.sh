@@ -31,6 +31,11 @@ NAND1_DEVICE="/dev/nand1"
 NAND2_DEVICE="/dev/nand2"
 NAND3_DEVICE="/dev/nand3"
 
+DEVICE_A10="a10"
+DEVICE_A20="a20"
+
+CPU_INFO="/proc/cpuinfo"
+
 MNT_BOOT="/mnt/nanda"
 MNT_ROOT="/mnt/nandb"
 
@@ -43,6 +48,8 @@ COLOR_GREEN=$(echo -e "\033[32m")
 COLOR_YELLOW=$(echo -e "\033[33m")
 COLOR_GRAY=$(echo -e "\033[37m")
 COLOR_RED=$(echo -e "\033[31m")
+
+ERR_DETECT_DEVICE="error: failed to detect your device"
 
 NAND_BOOT_DEVICE=
 NAND_ROOT_DEVICE=
@@ -161,20 +168,25 @@ if [[ $? -ne 0 ]];then
 fi
 
 ### determine device
-uname -r | grep 'sun7i\|3.3.0+' > /dev/null 2>&1
-if [[ $? -eq 0 ]];then
-	DEVICE_TYPE="a20"
-
-	### determine machid
-	uname -r | grep '3.3.0' > /dev/null 2>&1
-	if [[ $? -eq 0 ]];then
-		MACH_ID='0f35'
+if [[ -f $CPU_INFO ]];then
+	if cat $CPU_INFO | grep -q 'sun4i';then
+		DEVICE_TYPE="$DEVICE_A10"
+	elif cat $CPU_INFO | grep -q 'sun7i';then
+		DEVICE_TYPE="${DEVICE_A20}"
+		### determine machid
+		uname -r | grep '3.3.0' > /dev/null 2>&1
+		if [[ $? -eq 0 ]];then
+			MACH_ID='0f35'
+		else
+			MACH_ID='10bb'
+		fi
 	else
-		MACH_ID='10bb'
+        echoRed "$ERR_DETECT_DEVICE, must be sun4i or sun7i device"
+		exit 1
 	fi
-
 else
-	DEVICE_TYPE="a10"
+    echoRed "$ERR_DETECT_DEVICE, ${CPU_INFO} is not exist"
+	exit 1
 fi
 
 set -e
@@ -186,7 +198,7 @@ CUBIAN_PART="${CWD}/${DEVICE_TYPE}/cubian_nand.gz"
 # use 0f35 for kernel 3.3.0
 # use 10bb for kernel 3.4.43
 # copy correct u-boot.bin
-if [[ "$DEVICE_TYPE" = "a20" ]];then
+if [[ "$DEVICE_TYPE" = "${DEVICE_A20}" ]];then
 	rm -f ${CWD}/${DEVICE_TYPE}/bootloader/linux/u-boot*.bin
 	cp -f "${CWD}/${DEVICE_TYPE}/u-boot-${MACH_ID}.bin" \
 		"${CWD}/${DEVICE_TYPE}/bootloader/linux/u-boot.bin"
@@ -202,9 +214,9 @@ elif [[ -b $NAND1_DEVICE ]];then
 	NAND_BOOT_DEVICE="$NAND1_DEVICE"
 fi
 
-if [[ "$DEVICE_TYPE" = "a10" ]];then
+if [[ "$DEVICE_TYPE" = "$DEVICE_A10" ]];then
 	NAND_ROOT_DEVICE="$NANDB_DEVICE"
-elif [[ "$DEVICE_TYPE" = "a20" ]];then
+elif [[ "$DEVICE_TYPE" = "${DEVICE_A20}" ]];then
 	if [[ -b "$NANDC_DEVICE" ]];then
 		NAND_ROOT_DEVICE="$NANDC_DEVICE"
 		NAND_MAGIC_DEVICE="$NANDB_DEVICE"
