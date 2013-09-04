@@ -21,7 +21,12 @@ ROOT_PATH="${ROOT_PATH}/"
 FW_REPO=
 FW_REPO_RELEASE="https://github.com/cubieplayer/cubian-updates.git"
 FW_REPO_TEST="https://github.com/mmplayer/cubian-updates.git"
-FW_REPO_LOCAL_OLD="${ROOT_PATH}root/.cubian-update"
+
+# these are old repositories used by cubian-update
+# it's safe to delete them now to release more space for user
+FW_REPO_LOCAL_OLD1="${ROOT_PATH}root/.cubian-update"
+FW_REPO_LOCAL_OLD2="${ROOT_PATH}root/.cubian-firmware"
+
 FW_REPO_LOCAL="${ROOT_PATH}root/.cubian-updates"
 FW_MOD_PATH="${ROOT_PATH}lib/modules"
 FW_REVISION=".update_revision"
@@ -562,9 +567,22 @@ if [[ ${EUID} -ne 0 ]]; then
 	exit 1
 fi
 
-if [[ -d $FW_REPO_LOCAL_OLD ]];then
-	debug "remove old repository $FW_REPO_LOCAL_OLD"
-	rm -rf $FW_REPO_LOCAL_OLD
+if [[ -d $FW_REPO_LOCAL_OLD1 ]];then
+	debug "remove old repository $FW_REPO_LOCAL_OLD1"
+	if $OPT_VERBOSE;then
+		rm -rvf $FW_REPO_LOCAL_OLD1
+	else
+		rm -rf $FW_REPO_LOCAL_OLD1
+	fi
+fi
+
+if [[ -d $FW_REPO_LOCAL_OLD2 ]];then
+	debug "remove old repository $FW_REPO_LOCAL_OLD2"
+	if $OPT_VERBOSE;then
+		rm -rvf $FW_REPO_LOCAL_OLD2
+	else
+		rm -rf $FW_REPO_LOCAL_OLD2
+	fi
 fi
 
 if [[ ${UPDATE_SELF} -ne 0 ]]; then
