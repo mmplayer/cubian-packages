@@ -41,6 +41,8 @@ NAND_DEVICE="/dev/nand"
 NAND1_DEVICE="/dev/nand1"
 NANDA_DEVICE="/dev/nanda"
 
+CPU_INFO="/proc/cpuinfo"
+
 NAND_BOOT_PART=
 NAND_BOOT_MOUNT_POINT="${ROOT_PATH}root/nand-bootloader"
 
@@ -214,10 +216,14 @@ done
 
 determineBranch(){
 	set +e
-	if [[ "$ROOT_PATH" = "/" ]] && [[ $(ls -di / | awk '{print $1}') = "2" ]];then
-		uname -r | grep -q 'sun7i\|3.3.0+' && \
-		BRANCH="$BRANCH_A20" || \
-		BRANCH="$BRANCH_A10"
+	if [[ -f $CPU_INFO ]];then
+		if cat $CPU_INFO | grep -q 'sun4i';then
+			BRANCH="$BRANCH_A10"
+		elif cat $CPU_INFO | grep -q 'sun7i';then
+			BRANCH="$BRANCH_A20"
+		else
+			determineBranchManually
+		fi
 	else
 		determineBranchManually
 	fi
