@@ -32,10 +32,10 @@ done
 
 usage(){
 cat <<EOF
-Usage: $0 device [proportion]
+Usage: $0 device [ratio]
 
-device         The device which cubian installed on
-proportion     [1-100] The space will occupied by cubian on device
+device    The device which cubian installed on
+ratio     [1-100] The space will occupied by cubian on device
 
 eg. $0 /dev/mmcblk0 50 The rootfs will occupied the SD-card in half
 EOF
