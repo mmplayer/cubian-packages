@@ -3,7 +3,7 @@ Version: 1.0-1
 Section: video
 Priority: optional
 Architecture: armhf
-Depends: libc6 (>= 2.13-28), libdri2, libsunxi-mali-x11
+Depends: libc6 (>= 2.13-28), libdri2-1, libsunxi-mali-x11
 Suggests: sunxi-disp-test
 Maintainer: cubian developer <sophiasmth@gmail.com>
 Description: binary userspace drivers that a fully working system for sunxi
