@@ -301,17 +301,54 @@ updateFirmwareRepo(){
 	forceCleanupRepo
 
 	branch_name=$(eval ${GIT_CMD} rev-parse --abbrev-ref HEAD)
+	do_pull_origin=true
 	if [[ "$BRANCH" != "$branch_name" ]];then
+
+		# try to checkout the specific branch
+		set +e
+			eval ${GIT_CMD} checkout $BRANCH > /dev/null 2>&1
+			checkout_sucess=$?
+		set -e
+
+		if [[ ${checkout_sucess} -ne 0 ]]; then
+			# checkout the default branch
+			if $OPT_VERBOSE;then
+				echoYellow "Branch $BRANCH not found in local repository, trying to fix the problem"
+			fi
+
+			eval ${GIT_CMD} checkout $BRANCH_A10 > /dev/null 2>&1
+
+			# pull remotes may contains the branch?
+			if $OPT_VERBOSE;then
+				echoBlue "Retrieving $BRANCH branch from remote repository"
+				eval ${GIT_CMD} pull -v origin
+			else
+				eval ${GIT_CMD} pull -q origin > /dev/null 2>&1
+			fi
+			do_pull_origin=false
+		fi
+
+		set +e
 		if $OPT_VERBOSE;then
 			eval ${GIT_CMD} checkout $BRANCH
+			checkout_sucess=$?
 		else
 			eval ${GIT_CMD} checkout $BRANCH > /dev/null 2>&1
+			checkout_sucess=$?
 		fi
+		set -e
+
+		if [[ ${checkout_sucess} -ne 0 ]]; then
+			echoRed "error: failed to get updates, checkout $BRANCH branch failed !!!"
+		fi
+
 	fi
-	if $OPT_VERBOSE;then
-		eval ${GIT_CMD} pull -v origin
-	else
-		eval ${GIT_CMD} pull -q origin > /dev/null 2>&1
+	if $do_pull_origin;then
+		if $OPT_VERBOSE;then
+			eval ${GIT_CMD} pull -v origin
+		else
+			eval ${GIT_CMD} pull -q origin > /dev/null 2>&1
+		fi
 	fi
 }
 
@@ -666,7 +703,8 @@ if [[ ! -f "${FW_CURRENT_REV}" ]];then
 	# provide reinstall flag but never installed, give a reinstall feedback
 	if $OPT_REINSTALL;then
 		echoGreen "*** Reinstall success"
-		exit 0
+	else
+		installUpdates
 	fi
 else
 	# perform reinstall
