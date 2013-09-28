@@ -1,0 +1,12 @@
+Package: sunxi-disp-test
+Version: 1.0-1
+Section: utils
+Priority: optional
+Architecture: armhf
+Depends: libc6
+Maintainer: cubian developer <sophiasmth@gmail.com>
+Description: sunxi mali display test programs
+ contains the following program
+ sunxi_disp_test 
+ sunxi_disp_g2d_bench
+ sunxi_disp_vsync_demo
