@@ -1,0 +1,6 @@
+#ifndef _UMP_VERSION_H_
+#define _UMP_VERSION_H_ 1
+
+#define UNIFIED_MEMORY_PROVIDER_VERSION 3
+
+#endif /* _UMP_VERSION_H_ */

@@ -1,0 +1,9 @@
+Package: libsunxi-mali-x11-dev
+Version: 1.0-1
+Section: libdevel
+Priority: optional
+Architecture: armhf
+Depends: libc6-dev
+Maintainer: cubian developer <sophiasmth@gmail.com>
+Description: Mali userspace drivers, including proprietary OpenGLESv2/EGL binaries.
+ This package contains the development files.
