@@ -1,8 +1,0 @@
-Package: binary-driver-sunxi
-Version: 1.0-1
-Section: admin
-Priority: optional
-Architecture: armhf
-Depends: 
-Maintainer: cubian developer <sophiasmth@gmail.com>
-Description: libdri2
