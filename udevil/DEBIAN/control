@@ -6,7 +6,6 @@ Architecture: armhf
 Version: 0.4.1
 Section: utils
 Depends: libc6, libglib2.0-0, libudev0 (>=143)
-Recommends: 
 Suggests: eject, cifs-utils, curlftpfs, sshfs, davfs2, spacefm
 Conflicts: devmon
 Provides: devmon
