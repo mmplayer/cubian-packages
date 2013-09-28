@@ -1,0 +1,12 @@
+prefix=/root/tmp
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: dri2
+Description: The dri2 Library
+Version: 1.0.0
+Requires: xproto
+Requires.private: x11 xext
+Cflags: -I${includedir}
+Libs: -L${libdir} -ldri2
