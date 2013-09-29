@@ -1,9 +1,10 @@
 Package: libsunxi-mali-x11
-Version: 1.0-1
+Version: 1.1-1
 Section: libs
 Priority: optional
 Architecture: armhf
 Depends: libc6 (>= 2.13-28)
+Conflicts: libegl1-mesa-drivers, libegl1-mesa
 Homepage: https://github.com/linux-sunxi/sunxi-mali
 Maintainer: cubian developer <sophiasmth@gmail.com>
 Description: Mali userspace drivers, including proprietary OpenGLESv2/EGL binaries.
