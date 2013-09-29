@@ -1,0 +1,4 @@
+# Allow user cubie or users in gpio group to use graphic
+
+KERNEL=="mali", MODE="0660", GROUP="video"
+KERNEL=="ump", MODE="0660", GROUP="video"
