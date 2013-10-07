@@ -1,8 +1,9 @@
 Package: libdri2-1
-Version: 1.0-1
+Version: 1.0-2
 Section: libs
 Priority: optional
 Architecture: armhf
+Pre-Depends: multiarch-support
 Depends: libc6 (>= 2.13-28)
 Maintainer: cubian developer <sophiasmth@gmail.com>
 Description: library for the DRI2 extension to the X Window System
