@@ -1,5 +1,5 @@
 Package: libsunxi-mali-x11
-Version: 1.0-5
+Version: 1.0-4
 Section: libs
 Priority: optional
 Architecture: armhf
