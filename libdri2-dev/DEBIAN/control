@@ -1,9 +1,10 @@
 Package: libdri2-dev
-Version: 1.0-2
+Version: 1.0-3
 Section: libdevel
 Priority: optional
 Architecture: armhf
 Suggests: pkg-config
+Depends: libdri2-1 (>= 1.0-2)
 Maintainer: cubian developer <sophiasmth@gmail.com>
 Description: library for the DRI2 extension to the X Window System
  libdri2 - library for the DRI2 extension to the X Window System
