@@ -238,7 +238,7 @@ if nandPartitionOK;then
     installRootfs
     patchRootfs
     umountNand
-    echoGreen "*** Success! remember to REMOVE your SD card then reboot"
+    echoGreen "*** Success! remember to REMOVE your SD card from board ***"
     if promptyn "shutdown now?";then
         shutdown -h now
     fi
