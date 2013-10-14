@@ -2,7 +2,7 @@
 
 set -e
 
-VERSION="1.2.1"
+VERSION="1.2.2"
 
 RAW_ARGS="$@"
 
@@ -51,6 +51,7 @@ NAME_UENV_TXT="uEnv.txt"
 NAME_SCRIPT_BIN="script.bin"
 
 UBOOT_MMC_UPDATE="${FW_REPO_LOCAL}/u-boot-mmc.bin"
+UBOOT_MMC_IMG_UPDATE="${FW_REPO_LOCAL}/u-boot-mmc.img"
 UBOOT_NAND_UPDATE="${FW_REPO_LOCAL}/u-boot-nand.bin"
 SUNXI_SPL_UPDATE="${FW_REPO_LOCAL}/sunxi-spl.bin"
 UENV_TXT_UPDATE="${FW_REPO_LOCAL}/boot/${NAME_UENV_TXT}"
@@ -419,6 +420,14 @@ updateBootLoaderMMC(){
 			dd if=$UBOOT_MMC_UPDATE of=$MMC_DEVICE bs=1024 seek=32 > /dev/null 2>&1
 		fi
 	fi
+	if [[ -f $UBOOT_MMC_IMG_UPDATE ]];then
+		if $OPT_VERBOSE;then
+			debug "Write u-boot to SD-Card"
+			dd if=$UBOOT_MMC_IMG_UPDATE of=$MMC_DEVICE bs=1024 seek=40
+		else
+			dd if=$UBOOT_MMC_IMG_UPDATE of=$MMC_DEVICE bs=1024 seek=40 > /dev/null 2>&1
+		fi
+	fi
 	if [[ -f $SUNXI_SPL_UPDATE ]];then
 		if $OPT_VERBOSE;then
 			debug "Write sunxi-spl to SD-Card"
@@ -511,7 +520,7 @@ updateFirmware(){
 
 	if [[ -b $MMC_DEVICE ]] && \
 		[[ "$SYS_INSTALL_TYPE" = "$SYS_INSTALL_TYPE_MMC" ]] && \
-		([[ -f $UBOOT_MMC_UPDATE ]] || [[ -f $SUNXI_SPL_UPDATE ]]);then
+		([[ -f $UBOOT_MMC_UPDATE ]] || [[ -f $UBOOT_MMC_IMG_UPDATE ]] || [[ -f $SUNXI_SPL_UPDATE ]]);then
 		updateBootLoaderMMC
 	elif [[ -b $NAND_DEVICE ]] && \
 		[[ "$SYS_INSTALL_TYPE" = "$SYS_INSTALL_TYPE_NAND" ]] && \
@@ -520,7 +529,7 @@ updateFirmware(){
 	elif [[ ! -b $MMC_DEVICE ]] && \
 		[[ "$ROOT_PATH" != "/" ]] && \
 		[[ "$SYS_INSTALL_TYPE" = "$SYS_INSTALL_TYPE_MMC" ]] && \
-		([[ -f $UBOOT_MMC_UPDATE ]] || [[ -f $SUNXI_SPL_UPDATE ]]);then
+		([[ -f $UBOOT_MMC_UPDATE ]] || [[ -f $UBOOT_MMC_IMG_UPDATE ]] || [[ -f $SUNXI_SPL_UPDATE ]]);then
 		# ask user for MMC device
 		acquireMMCDevice
 		updateBootLoaderMMC
