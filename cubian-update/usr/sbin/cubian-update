@@ -2,7 +2,7 @@
 
 set -e
 
-VERSION="1.2.2"
+VERSION="1.2.4"
 
 RAW_ARGS="$@"
 
@@ -48,6 +48,7 @@ NAND_BOOT_MOUNT_POINT="${ROOT_PATH}root/nand-bootloader"
 
 NAME_UBOOT_BIN="u-boot.bin"
 NAME_UENV_TXT="uEnv.txt"
+NAME_BOOT_SCR="boot.scr"
 NAME_SCRIPT_BIN="script.bin"
 
 UBOOT_MMC_UPDATE="${FW_REPO_LOCAL}/u-boot-mmc.bin"
@@ -55,6 +56,7 @@ UBOOT_MMC_IMG_UPDATE="${FW_REPO_LOCAL}/u-boot-mmc.img"
 UBOOT_NAND_UPDATE="${FW_REPO_LOCAL}/u-boot-nand.bin"
 SUNXI_SPL_UPDATE="${FW_REPO_LOCAL}/sunxi-spl.bin"
 UENV_TXT_UPDATE="${FW_REPO_LOCAL}/boot/${NAME_UENV_TXT}"
+BOOT_SCR_UPDATE="${FW_REPO_LOCAL}/boot/${NAME_BOOT_SCR}"
 SCRIPT_BIN_UPDATE="${FW_REPO_LOCAL}/boot/${NAME_SCRIPT_BIN}"
 
 OPT_VERBOSE=false
@@ -64,10 +66,10 @@ OPT_CLEAN=false
 OPT_REVERT_FIRMWARE=false
 OPT_SKIP_KERNEL=false
 OPT_SKIP_MODULES=false
-
-DOES_UPDATE_KERNEL=false
-DOES_UPDATE_MODULES=false
-DOES_UPDATE_BOOTLOADER=false
+OPT_SKIP_ROOTFS=false
+OPT_UPDATE_BOOTLOADER=false
+OPT_UPDATE_BOOT_CFG=false
+OPT_UPDATE_BOARD_CFG=false
 
 COLOR_NORMAL=$(echo -e "\033[m")
 COLOR_BLUE=$(echo -e "\033[36m")
@@ -93,15 +95,21 @@ This script will update your system files to latest version. It respects the
 enviroment variable ROOT_PATH, it sets to '/' by default.
 
 Options:
-  -h,--help            Show this message
-  -r,--reinstall       Perform reinstallation of the updates
-  -v,--verbos          Verbose output
-  -c,--clean           Clean up everything, redownload updates from server
-     --revert-firmware Revert firmware to previous release. You may executes 
-                       the revert command mutiple times in order to update the
-                       firmware to historical versions
-     --skip-kernel     Skip to update kernel
-     --skip-modules    Skip to update modules
+  -h,--help               Show this message
+  -r,--reinstall          Perform reinstallation of the updates
+  -v,--verbose            Verbose output
+  -c,--clean              Clean up everything, redownload updates from server
+     --revert-firmware    Revert firmware to previous release.
+
+Exclusive Options:
+     --skip-kernel        Skip to update kernel
+     --skip-modules       Skip to update modules
+     --skip-rootfs        Skip to update files on /
+
+Inclusive Options:
+     --update-bootloader  Update bootloader(u-boot)
+     --update-boot-cfg    Update boot.scr and uEnv.txt
+     --update-board-cfg   Update board config(script.bin)
 EOF
 }
 
@@ -113,7 +121,11 @@ if ! OPTIONS=$(getopt -o hrvct -l help \
 -l revert-firmware \
 -l skip-kernel \
 -l skip-modules \
--- "$@");then
+-l skip-rootfs \
+-l update-bootloader \
+-l update-boot-cfg \
+-l update-board-cfg \
+-- ${RAW_ARGS});then
 	usage
 	exit 1
 fi
@@ -146,6 +158,18 @@ while [ $# -gt 0 ];do
 			;;
 		--skip-modules)
 			OPT_SKIP_MODULES=true
+			;;
+		--skip-rootfs)
+			OPT_SKIP_ROOTFS=true
+			;;
+		--update-bootloader)
+			OPT_UPDATE_BOOTLOADER=true
+			;;
+		--update-boot-cfg)
+			OPT_UPDATE_BOOT_CFG=true
+			;;
+		--update-board-cfg)
+			OPT_UPDATE_BOARD_CFG=true
 			;;
 		(--) 
 			shift; 
@@ -270,7 +294,7 @@ downloadFirmwareRepo(){
 	RETVAL=$?
 	set -e
 	if [[ ${RETVAL} -ne 0 ]]; then
-		echoRed "!!! Failed to download firmware,Please check internet connection"
+		echoRed "!!! An error occurred on downloading firmware, Please use verbose output for more details"
 		exit 1
 	fi
 }
@@ -362,7 +386,6 @@ updateKernel(){
 	else
 		cp "${FW_REPO_LOCAL}/boot/uImage" "${ROOT_PATH}boot"
 	fi
-    DOES_UPDATE_KERNEL=true
 }
 
 updateModules(){
@@ -378,7 +401,6 @@ updateModules(){
 			echoBlue "*** Depmod $(basename "${DIR}")"
 			depmod -b "${ROOT_PATH}" -a $(basename "${DIR}")
 	done
-	DOES_UPDATE_MODULES=true
 }
 
 updateFS(){
@@ -436,7 +458,6 @@ updateBootLoaderMMC(){
 			dd if=$SUNXI_SPL_UPDATE of=$MMC_DEVICE bs=1024 seek=8 > /dev/null 2>&1
 		fi
 	fi
-	DOES_UPDATE_BOOTLOADER=true
 }
 
 updateBootLoaderNAND(){
@@ -476,7 +497,47 @@ updateBootLoaderNAND(){
 
 	rm -rf $NAND_BOOT_MOUNT_POINT
 
-	DOES_UPDATE_BOOTLOADER=true
+}
+
+updateBootCfg(){
+	echoBlue "*** Updating bootloader configuration"
+
+	if [[ -f $BOOT_SCR_UPDATE ]];then
+		local boot_scr_dest="${ROOT_PATH}boot/${NAME_BOOT_SCR}"
+		backup $boot_scr_dest
+		if $OPT_VERBOSE;then
+			debug "Update boot.scr"
+			cp -v $BOOT_SCR_UPDATE $boot_scr_dest
+		else
+			cp $BOOT_SCR_UPDATE $boot_scr_dest
+		fi
+	fi
+
+	if [[ -f $UENV_TXT_UPDATE ]];then
+		local uenv_txt_dest="${ROOT_PATH}boot/${NAME_UENV_TXT}"
+		backup $uenv_txt_dest
+		if $OPT_VERBOSE;then
+			debug "Update uEnv.txt"
+			cp -v $UENV_TXT_UPDATE $uenv_txt_dest
+		else
+			cp $UENV_TXT_UPDATE $uenv_txt_dest
+		fi
+	fi
+}
+
+updateBoardCfg(){
+	echoBlue "*** Updating bootloader configuration(script.bin)"
+
+	if [[ -f $SCRIPT_BIN_UPDATE ]];then
+		local script_bin_dest="${ROOT_PATH}boot/${NAME_SCRIPT_BIN}"
+		backup $script_bin_dest
+		if $OPT_VERBOSE;then
+			debug "update script.bin"
+			cp -v $SCRIPT_BIN_UPDATE $script_bin_dest
+		else
+			cp $SCRIPT_BIN_UPDATE $script_bin_dest
+		fi
+	fi
 }
 
 updateFirmware(){
@@ -514,41 +575,47 @@ updateFirmware(){
 		echoBlue "*** As requested, not updating modules"
 	fi
 
-	if [[ -d "${FW_REPO_LOCAL}/fs" ]];then
-		updateFS
-	fi
-
-	if [[ -b $MMC_DEVICE ]] && \
-		[[ "$SYS_INSTALL_TYPE" = "$SYS_INSTALL_TYPE_MMC" ]] && \
-		([[ -f $UBOOT_MMC_UPDATE ]] || [[ -f $UBOOT_MMC_IMG_UPDATE ]] || [[ -f $SUNXI_SPL_UPDATE ]]);then
-		updateBootLoaderMMC
-	elif [[ -b $NAND_DEVICE ]] && \
-		[[ "$SYS_INSTALL_TYPE" = "$SYS_INSTALL_TYPE_NAND" ]] && \
-		([[ -f $UBOOT_NAND_UPDATE ]] || [[ -f $UENV_TXT_UPDATE ]]);then
-		updateBootLoaderNAND
-	elif [[ ! -b $MMC_DEVICE ]] && \
-		[[ "$ROOT_PATH" != "/" ]] && \
-		[[ "$SYS_INSTALL_TYPE" = "$SYS_INSTALL_TYPE_MMC" ]] && \
-		([[ -f $UBOOT_MMC_UPDATE ]] || [[ -f $UBOOT_MMC_IMG_UPDATE ]] || [[ -f $SUNXI_SPL_UPDATE ]]);then
-		# ask user for MMC device
-		acquireMMCDevice
-		updateBootLoaderMMC
+	if ! $OPT_SKIP_ROOTFS;then
+		if [[ -d "${FW_REPO_LOCAL}/fs" ]];then
+			updateFS
+		fi
 	else
-		echoYellow "warning: bootloader is not updated"
+		echoBlue "*** As requested, not updating rootfs"
 	fi
 
-	if [[ -f $SCRIPT_BIN_UPDATE ]];then
-		script_bin_dest="${ROOT_PATH}boot/${NAME_SCRIPT_BIN}"
-		backup $script_bin_dest
-		if $OPT_VERBOSE;then
-			debug "update script.bin"
-			cp -v $SCRIPT_BIN_UPDATE $script_bin_dest
+	if $OPT_UPDATE_BOOTLOADER;then
+		echoBlue "*** As requested, updating bootloader(u-boot)"
+		if [[ -b $MMC_DEVICE ]] && \
+			[[ "$SYS_INSTALL_TYPE" = "$SYS_INSTALL_TYPE_MMC" ]] && \
+			([[ -f $UBOOT_MMC_UPDATE ]] || [[ -f $UBOOT_MMC_IMG_UPDATE ]] || [[ -f $SUNXI_SPL_UPDATE ]]);then
+			updateBootLoaderMMC
+		elif [[ -b $NAND_DEVICE ]] && \
+			[[ "$SYS_INSTALL_TYPE" = "$SYS_INSTALL_TYPE_NAND" ]] && \
+			([[ -f $UBOOT_NAND_UPDATE ]] || [[ -f $UENV_TXT_UPDATE ]]);then
+			updateBootLoaderNAND
+		elif [[ ! -b $MMC_DEVICE ]] && \
+			[[ "$ROOT_PATH" != "/" ]] && \
+			[[ "$SYS_INSTALL_TYPE" = "$SYS_INSTALL_TYPE_MMC" ]] && \
+			([[ -f $UBOOT_MMC_UPDATE ]] || [[ -f $UBOOT_MMC_IMG_UPDATE ]] || [[ -f $SUNXI_SPL_UPDATE ]]);then
+			# ask user for MMC device
+			acquireMMCDevice
+			updateBootLoaderMMC
 		else
-			cp $SCRIPT_BIN_UPDATE $script_bin_dest
+			echoYellow "warning: bootloader is not updated"
 		fi
 	fi
 
-	if $DOES_UPDATE_KERNEL || $DOES_UPDATE_BOOTLOADER;then
+	if $OPT_UPDATE_BOOT_CFG;then
+		echoBlue "*** As requested, updating bootloader configurations($NAME_BOOT_SCR or $NAME_UENV_TXT)"
+		updateBootCfg
+	fi
+
+	if $OPT_UPDATE_BOARD_CFG;then
+		echoBlue "*** As requested, updating board configurations(script.bin)"
+		updateBoardCfg
+	fi
+
+	if -z "$1";then
 		echoGreen "*** Update success, A reboot is needed for changes to take effects"
 	fi
 
@@ -593,6 +660,8 @@ set -e
 
 rm -- "\$0"
 
+rm -rf /var/lib/apt/lists/
+
 apt-get update
 apt-get install -y cubian-update
 
@@ -603,6 +672,8 @@ else
 set -e
 
 rm -- "\$0"
+
+rm -rf /var/lib/apt/lists/
 
 apt-get update > /dev/null 2>&1
 apt-get install -y cubian-update > /dev/null 2>&1
@@ -670,6 +741,10 @@ debug "Update From: ${FW_REPO}"
 debug "Root Path: ${ROOT_PATH}"
 debug "Update Kernel: $(skipOpt2str ${OPT_SKIP_KERNEL})"
 debug "Update Modules: $(skipOpt2str ${OPT_SKIP_MODULES})"
+debug "Update Rootfs: $(skipOpt2str ${OPT_SKIP_ROOTFS})"
+debug "Update Bootloader: $(bool2str ${OPT_UPDATE_BOOTLOADER})"
+debug "Update Boot configuration: $(bool2str ${OPT_UPDATE_BOOT_CFG})"
+debug "Update Board configuration: $(bool2str ${OPT_UPDATE_BOARD_CFG})"
 
 determineBranch
 if [[ -z $BRANCH ]];then
@@ -708,7 +783,7 @@ if $OPT_REVERT_FIRMWARE;then
 fi
 
 if [[ ! -f "${FW_CURRENT_REV}" ]];then
-	updateFirmware
+	updateFirmware "no_ending_prompt"
 	# provide reinstall flag but never installed, give a reinstall feedback
 	if $OPT_REINSTALL;then
 		echoGreen "*** Reinstall success"
