@@ -243,11 +243,11 @@ if nandPartitionOK;then
         shutdown -h now
     fi
 else
-    if promptyn "This will completely destory your data on $NAND_DEVICE, Are you sure to continue?"; then
+    if promptyn "This operation will completely destory your data on $NAND_DEVICE, Are you sure to continue?[y/n]"; then
         umountNand
         formatNand   
         echo ""
-        echoRed "*** Plese reboot then run this script again after the system is up ***"
+		echoRed "*** Reboot is needed! Please re-run cubian-nandinstall after system is up ***"
         echo ""
         if promptyn "reboot now?";then
             shutdown -r now
