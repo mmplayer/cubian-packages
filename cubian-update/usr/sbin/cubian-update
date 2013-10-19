@@ -2,7 +2,7 @@
 
 set -e
 
-VERSION="1.2.4"
+VERSION="1.2.5"
 
 RAW_ARGS="$@"
 
@@ -615,7 +615,7 @@ updateFirmware(){
 		updateBoardCfg
 	fi
 
-	if -z "$1";then
+	if [[ -z $2 ]];then
 		echoGreen "*** Update success, A reboot is needed for changes to take effects"
 	fi
 
@@ -783,7 +783,7 @@ if $OPT_REVERT_FIRMWARE;then
 fi
 
 if [[ ! -f "${FW_CURRENT_REV}" ]];then
-	updateFirmware "no_ending_prompt"
+	updateFirmware "" "no_ending_prompt"
 	# provide reinstall flag but never installed, give a reinstall feedback
 	if $OPT_REINSTALL;then
 		echoGreen "*** Reinstall success"
