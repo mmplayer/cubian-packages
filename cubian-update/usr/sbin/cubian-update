@@ -2,11 +2,12 @@
 
 set -e
 
-VERSION="1.2.5"
+VERSION="1.2.6"
 
 RAW_ARGS="$@"
 
-GIT_SSL_NO_VERIFY=1
+GIT_SSL_VERIFY="false"
+GIT_PROXY=$(echo ${http_proxy:-$HTTP_PROXY} | sed -e "s/^https*:\/\///I")
 
 UPDATE_SELF=${UPDATE_SELF:-1}
 SELF_UPDATE_SCRIPT="/root/.cubian-update-self.sh"
@@ -282,19 +283,54 @@ echoYellow(){
 	echo "${COLOR_YELLOW}${1}${COLOR_NORMAL}"
 }
 
+doSetProxy(){
+	if [ -n "$GIT_PROXY" ];then
+		eval ${GIT_CMD} config http.proxy "$GIT_PROXY"
+	else
+		# Will fail if http.proxy is not set
+		# We simply ignore this error rather than double checking
+		set +e
+		eval ${GIT_CMD} config --unset http.proxy
+		set -e
+	fi
+	eval ${GIT_CMD} config http.sslVerify "$GIT_SSL_VERIFY"
+}
+
+setProxy(){
+	if $OPT_VERBOSE;then
+		debug "Apply proxy setting $GIT_PROXY"
+		doSetProxy
+	else
+		doSetProxy > /dev/null 2>&1
+	fi
+}
+
+deleteFirmwareRepo(){
+	rm -rf ${FW_REPO_LOCAL}
+}
+
 downloadFirmwareRepo(){
 	echoBlue "*** Downloading firmware (this may take a while)"
 	mkdir -p "${FW_REPO_LOCAL}"
 	set +e
 	if $OPT_VERBOSE;then
-		git clone "${FW_REPO}" "${FW_REPO_LOCAL}" --branch ${BRANCH}
+		git init "${FW_REPO_LOCAL}"
+		setProxy
+		debug "Add remote origin ${FW_REPO}"
+		eval ${GIT_CMD} remote add origin ${FW_REPO}
+		debug "Pull origin ${BRANCH}"
+		eval ${GIT_CMD} pull origin ${BRANCH}
 	else
-		git clone "${FW_REPO}" "${FW_REPO_LOCAL}" --branch ${BRANCH} > /dev/null 2>&1
+		git init "${FW_REPO_LOCAL}" > /dev/null 2>&1
+		setProxy
+		eval ${GIT_CMD} remote add origin "${FW_REPO}" > /dev/null 2>&1
+		eval ${GIT_CMD} pull origin ${BRANCH} > /dev/null 2>&1
 	fi
 	RETVAL=$?
 	set -e
 	if [[ ${RETVAL} -ne 0 ]]; then
 		echoRed "!!! An error occurred on downloading firmware, Please use verbose output for more details"
+		deleteFirmwareRepo
 		exit 1
 	fi
 }
@@ -310,12 +346,24 @@ setFirmwareRepoUrl(){
 
 forceCleanupRepo(){
 	debug "clean up repository"
+	set +e
 	if $OPT_VERBOSE;then
 		eval ${GIT_CMD} reset --hard
+		local checkout_success=$?
 		eval ${GIT_CMD} clean -dfxe ${FW_REVISION}
+		local clean_success=$?
 	else
 		eval ${GIT_CMD} reset -q --hard
+		local checkout_tag_success=$?
 		eval ${GIT_CMD} clean -qdfxe ${FW_REVISION}
+		local clean_success=$?
+	fi
+	set -e
+
+	if [[ ${checkout_success} -ne 0 ]] || [[ ${clean_success} -ne 0 ]]; then
+		echoYellow "Your cubian-update repository seems broken, trying to fix the problem"
+		deleteFirmwareRepo
+		downloadFirmwareRepo
 	fi
 }
 
@@ -331,8 +379,8 @@ updateFirmwareRepo(){
 
 		# try to checkout the specific branch
 		set +e
-			eval ${GIT_CMD} checkout $BRANCH > /dev/null 2>&1
-			checkout_sucess=$?
+		eval ${GIT_CMD} checkout $BRANCH > /dev/null 2>&1
+		local checkout_sucess=$?
 		set -e
 
 		if [[ ${checkout_sucess} -ne 0 ]]; then
@@ -346,9 +394,9 @@ updateFirmwareRepo(){
 			# pull remotes may contains the branch?
 			if $OPT_VERBOSE;then
 				echoBlue "Retrieving $BRANCH branch from remote repository"
-				eval ${GIT_CMD} pull -v origin
+				eval ${GIT_CMD} pull -v origin ${BRANCH}
 			else
-				eval ${GIT_CMD} pull -q origin > /dev/null 2>&1
+				eval ${GIT_CMD} pull -q origin ${BRANCH} > /dev/null 2>&1
 			fi
 			do_pull_origin=false
 		fi
@@ -370,9 +418,9 @@ updateFirmwareRepo(){
 	fi
 	if $do_pull_origin;then
 		if $OPT_VERBOSE;then
-			eval ${GIT_CMD} pull -v origin
+			eval ${GIT_CMD} pull -v origin ${BRANCH}
 		else
-			eval ${GIT_CMD} pull -q origin > /dev/null 2>&1
+			eval ${GIT_CMD} pull -q origin ${BRANCH} > /dev/null 2>&1
 		fi
 	fi
 }
@@ -628,9 +676,9 @@ installUpdates(){
 
 	# get latest tag from remote
 	if [[ "$BRANCH" = "$BRANCH_A10" ]];then
-		fw_remote_tag=$(git ls-remote --tags ${FW_REPO} refs/tags/${BRANCH}*[^}] | awk '{print $2}' | sort -n | tail -n 1 | cut -c 11-)
+		fw_remote_tag=$(eval ${GIT_CMD} ls-remote --tags origin refs/tags/${BRANCH}*[^}] | awk '{print $2}' | sort -n | tail -n 1 | cut -c 11-)
 	elif [[ "$BRANCH" = "$BRANCH_A20" ]];then
-		fw_remote_tag=$(git ls-remote --tags ${FW_REPO} refs/tags/${BRANCH}*[^}] | awk '{print $2}' | sort -n | tail -n 1 | cut -c 11-)
+		fw_remote_tag=$(eval ${GIT_CMD} ls-remote --tags origin refs/tags/${BRANCH}*[^}] | awk '{print $2}' | sort -n | tail -n 1 | cut -c 11-)
 	fi
 
 	if [[ -z $fw_remote_tag ]];then
@@ -738,6 +786,7 @@ if $OPT_CLEAN;then
 fi
 
 debug "Update From: ${FW_REPO}"
+debug "Proxy:${GIT_PROXY}"
 debug "Root Path: ${ROOT_PATH}"
 debug "Update Kernel: $(skipOpt2str ${OPT_SKIP_KERNEL})"
 debug "Update Modules: $(skipOpt2str ${OPT_SKIP_MODULES})"
@@ -765,6 +814,7 @@ if [[ ! -f "${FW_REPO_LOCAL}/.git/config" ]];then
 fi
 
 setFirmwareRepoUrl
+setProxy
 if $OPT_REVERT_FIRMWARE;then
 	# revert to previous tag based on current tag
 	if [[ ! -f ${FW_CURRENT_REV} ]];then
