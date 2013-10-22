@@ -2,7 +2,7 @@
 
 set -e
 
-VERSION="1.2.6"
+VERSION="1.2.7"
 
 RAW_ARGS="$@"
 
@@ -319,12 +319,12 @@ downloadFirmwareRepo(){
 		debug "Add remote origin ${FW_REPO}"
 		eval ${GIT_CMD} remote add origin ${FW_REPO}
 		debug "Pull origin ${BRANCH}"
-		eval ${GIT_CMD} pull origin ${BRANCH}
+		eval ${GIT_CMD} fetch origin
 	else
 		git init "${FW_REPO_LOCAL}" > /dev/null 2>&1
 		setProxy
 		eval ${GIT_CMD} remote add origin "${FW_REPO}" > /dev/null 2>&1
-		eval ${GIT_CMD} pull origin ${BRANCH} > /dev/null 2>&1
+		eval ${GIT_CMD} fetch origin > /dev/null 2>&1
 	fi
 	RETVAL=$?
 	set -e
@@ -394,9 +394,9 @@ updateFirmwareRepo(){
 			# pull remotes may contains the branch?
 			if $OPT_VERBOSE;then
 				echoBlue "Retrieving $BRANCH branch from remote repository"
-				eval ${GIT_CMD} pull -v origin ${BRANCH}
+				eval ${GIT_CMD} pull -v origin
 			else
-				eval ${GIT_CMD} pull -q origin ${BRANCH} > /dev/null 2>&1
+				eval ${GIT_CMD} pull -q origin > /dev/null 2>&1
 			fi
 			do_pull_origin=false
 		fi
@@ -418,9 +418,9 @@ updateFirmwareRepo(){
 	fi
 	if $do_pull_origin;then
 		if $OPT_VERBOSE;then
-			eval ${GIT_CMD} pull -v origin ${BRANCH}
+			eval ${GIT_CMD} pull -v origin
 		else
-			eval ${GIT_CMD} pull -q origin ${BRANCH} > /dev/null 2>&1
+			eval ${GIT_CMD} pull -q origin > /dev/null 2>&1
 		fi
 	fi
 }
