@@ -1,0 +1,20 @@
+Package: chromium-l10n
+Source: chromium-browser
+Version: 16.0.912.75~r116452-1
+Architecture: all
+Maintainer: Debian Chromium Maintainers <pkg-chromium-maint@lists.alioth.debian.org>
+Installed-Size: 10444
+Depends: chromium (>= 16.0.912.75~r116452-1)
+Conflicts: chromium-browser-l10n (<< 10.0.648.82~r75062-1~)
+Replaces: chromium-browser-l10n (<< 10.0.648.82~r75062-1~)
+Section: web
+Priority: optional
+Homepage: http://code.google.com/chromium/
+Description: chromium-browser language packages
+ Chromium is an open-source browser project that aims to build a safer, faster,
+ and more stable way for all Internet users to experience the web.
+ .
+ This package contains language packages for 50 languages:
+ am, ar, bg, bn, ca, cs, da, de, el, en-GB, es-419, es, et, fi, fil, fr, gu, he,
+ hi, hr, hu, id, it, ja, kn, ko, lt, lv, ml, mr, nb, nl, pl, pt-BR, pt-PT,
+ ro, ru, sk, sl, sr, sv, sw, ta, te, th, tr, uk, vi, zh-CN, zh-TW

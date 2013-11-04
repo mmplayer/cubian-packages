@@ -1,0 +1,18 @@
+Package: chromium-inspector
+Source: chromium-browser
+Version: 16.0.912.75~r116452-1
+Architecture: all
+Maintainer: Debian Chromium Maintainers <pkg-chromium-maint@lists.alioth.debian.org>
+Installed-Size: 3757
+Recommends: chromium (>= 10)
+Conflicts: chromium (<< 16.0.912.75~r116452-1), chromium-browser-inspector (<< 10.0.648.82~r75062-1~)
+Replaces: chromium-browser-inspector (<< 10.0.648.82~r75062-1~)
+Section: web
+Priority: optional
+Homepage: http://code.google.com/chromium/
+Description: page inspector for the chromium browser
+ Chromium is an open-source browser project that aims to build a safer, faster,
+ and more stable way for all Internet users to experience the web.
+ .
+ This package contains 'inspector', allowing web developers to inspect any
+ element of a web page at runtime (HTML, JavaScript, CSS, ..).

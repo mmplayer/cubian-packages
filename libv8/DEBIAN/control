@@ -1,0 +1,16 @@
+Package: libv8-3.6.6.14
+Source: libv8
+Version: 3.6.6.14-2
+Architecture: armhf
+Maintainer: Debian Javascript Maintainers <pkg-javascript-devel@lists.alioth.debian.org>
+Installed-Size: 2160
+Depends: libc6 (>= 2.4), libgcc1 (>= 1:4.4.0), libicu48 (>= 4.8-1), libstdc++6 (>= 4.4.0)
+Section: libs
+Priority: optional
+Homepage: http://code.google.com/p/v8/
+Description: v8 JavaScript engine - runtime library
+ V8 is a high performance JavaScript engine written in C++.  It is used
+ in the web browser Chromium.
+ .
+ This package includes the dynamic library against which you can link
+ your program.

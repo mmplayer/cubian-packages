@@ -1,0 +1,17 @@
+Package: libvpx0
+Source: libvpx
+Version: 0.9.7.p1-2
+Architecture: armhf
+Maintainer: Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>
+Original-Maintainer: Sebastian Dröge <slomo@debian.org>
+Installed-Size: 393
+Depends: libc6 (>= 2.11), libgcc1 (>= 1:4.4.0)
+Section: libs
+Priority: optional
+Homepage: http://www.webmproject.org
+Description: VP8 video codec (shared library)
+ VP8 is an open video codec, originally developed by On2 and released
+ as open source by Google Inc. It is the successor of the VP3 codec,
+ on which the Theora codec was based.
+ .
+ This package contains the shared libraries.
