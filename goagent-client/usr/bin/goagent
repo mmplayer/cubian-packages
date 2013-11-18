@@ -1,0 +1,25 @@
+#!/bin/sh
+TITLE="Goagent"
+GOAGENT_CONF="/etc/goagent-client.conf"
+if [ ! -f $GOAGENT_CONF ];then
+	whiptail --title "${TITLE}" --msgbox "Failed to start goagent, configuration file ${GOAGENT_CONF} is missing" 8 78
+	exit 1
+fi
+if cat $GOAGENT_CONF | grep "appid" | grep -q "goagent";then
+	whiptail --title "${TITLE}" --msgbox "You must set the appid to use goagent" 8 78
+	APPID=$(whiptail  --title "${TITLE} appid setting" --inputbox "Please type your appid, multiple appid should seprated with '|'" 8 78 3>&1 1>&2 2>&3)
+	exitstatus=$?
+	if [ $exitstatus = 0 ];then
+		#echo "${APPID}"
+		if sed -i "s/\s*appid\s*=\s*goagent\s*$/appid = ${APPID}/" $GOAGENT_CONF;then
+			echo "success"
+		else
+			whiptail --title "${TITLE}" --msgbox "Failed to edit ${GOAGENT_CONF}, You may try again with sudo" 8 78
+			exit 2
+		fi
+	else
+		whiptail --title "${TITLE}" --msgbox "You can't use goagent at this time" 8 78
+		exit 2
+	fi
+fi
+/usr/share/goagent-client/proxy.sh start

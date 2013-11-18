@@ -1,0 +1,10 @@
+Package: goagent-client
+Version: 3.0-5
+Section: utils
+Priority: optional
+Architecture: all
+Depends: python (>= 2.7.3), python-openssl, python-gevent
+Maintainer: cubian developer <sophiasmth@gmail.com>
+Description: a web proxy using google appengine service
+ This is a client side for goagent http://code.google.com/p/goagent/.
+ http://www.goagent.org/

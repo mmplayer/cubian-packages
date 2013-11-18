@@ -1,0 +1,20 @@
+#!/bin/sh
+TITLE="Goagent"
+GOAGENT_CONF="/etc/goagent-client.conf"
+if [ ! -f $GOAGENT_CONF ];then
+	whiptail --title "${TITLE}" --msgbox "configuration file ${GOAGENT_CONF} is missing" 8 78
+	exit 1
+fi
+if cat $GOAGENT_CONF | grep -q "appid";then
+	CURRENT_APPID=$(cat $GOAGENT_CONF | grep "appid" | sed "s/^\s*appid\s*=\s*//")
+	APPID=$(whiptail  --title "${TITLE} appid setting" --inputbox "Please type your appid, multiple appid should seprated with '|'" 8 78 $CURRENT_APPID 3>&1 1>&2 2>&3)
+	exitstatus=$?
+	if [ $exitstatus = 0 ];then
+		if sed -i "s/\s*appid\s*=\s*goagent\s*$/appid = ${APPID}/" $GOAGENT_CONF;then
+			exit 0
+		else
+			whiptail --title "${TITLE}" --msgbox "Failed to edit ${GOAGENT_CONF}, You may try again with sudo" 8 78
+			exit 2
+		fi
+	fi
+fi
