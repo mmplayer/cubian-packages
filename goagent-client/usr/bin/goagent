@@ -12,7 +12,7 @@ if cat $GOAGENT_CONF | grep "appid" | grep -q "goagent";then
 	if [ $exitstatus = 0 ];then
 		#echo "${APPID}"
 		if sed -i "s/\s*appid\s*=\s*goagent\s*$/appid = ${APPID}/" $GOAGENT_CONF;then
-			echo "success"
+			:
 		else
 			whiptail --title "${TITLE}" --msgbox "Failed to edit ${GOAGENT_CONF}, You may try again with sudo" 8 78
 			exit 2
