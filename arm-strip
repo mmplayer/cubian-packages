@@ -1,0 +1,4 @@
+#!/bin/bash
+STRIP=~/CubieDebian/toolchain/bin/arm-none-linux-gnueabi-strip
+find $1 -executable -type f \
+	-exec echo 'strip {}' ';' -exec $STRIP '{}' ';'
