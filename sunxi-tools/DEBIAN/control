@@ -1,0 +1,10 @@
+Package: sunxi-tools
+Version: 1.0-1
+Section: admin
+Priority: optional
+Architecture: armhf
+Depends: libc6 (>= 2.13)
+Maintainer: cubian developer <sophiasmth@gmail.com>
+Description: tools to help hacking Allwinner A10/A20 devices
+ contains nand-part for A10 and A20, fex2bin, bin2fex
+http://linux-sunxi.org/
