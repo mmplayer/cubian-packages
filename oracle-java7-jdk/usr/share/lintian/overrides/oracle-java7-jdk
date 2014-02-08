@@ -1,0 +1,10 @@
+oracle-java7-jdk: copyright-should-refer-to-common-license-file-for-gpl
+oracle-java7-jdk: shlib-without-PT_GNU_STACK-section
+oracle-java7-jdk: unstripped-binary-or-object
+oracle-java7-jdk: binary-or-shlib-defines-rpath
+oracle-java7-jdk: menu-icon-missing /usr/share/icons/sun-java6.xpm
+oracle-java7-jdk: menu-icon-missing /usr/share/pixmaps/sun-java6.xpm
+oracle-java7-jdk: package-contains-empty-directory
+oracle-java7-jdk: too-long-extended-description-in-templates
+oracle-java7-jdk: embedded-library
+oracle-java7-jdk: shlib-with-executable-bit

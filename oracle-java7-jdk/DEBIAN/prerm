@@ -1,0 +1,20 @@
+#!/bin/sh -e
+
+jdk_tools='HtmlConverter appletviewer apt extcheck idlj jar jarsigner java-rmi.cgi javac javadoc javah javap jconsole jdb jhat jinfo jmap jps jrunscript jsadebugd jstack jstat jstatd native2ascii rmic schemagen serialver wsgen wsimport xjc'
+basedir=/usr/lib/jvm/java-7-oracle-1.7.0.51
+basediralias=/usr/lib/jvm/java-7-oracle
+jar_packs=''
+
+
+for i in $jar_packs; do
+    jar=$(echo $i | sed 's/\.pack$/.jar/')
+    rm -f $basedir/$jar
+done
+
+if [ "$1" = "remove" ] || [ "$1" = "deconfigure" ]; then
+    for i in $jdk_tools; do
+	update-alternatives --remove $i $basediralias/bin/$i
+    done
+fi
+
+

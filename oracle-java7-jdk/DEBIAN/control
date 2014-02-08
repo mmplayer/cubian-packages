@@ -1,0 +1,20 @@
+Package: oracle-java7-jdk
+Version: 1.0.1-1
+Architecture: armhf
+Maintainer: Cubian Maintainer <sophiasmth@gmail.com>
+Pre-Depends: debconf (>= 0.5) | debconf-2.0
+Depends: oracle-java7-bin, libc6, libx11-6
+Provides: java-compiler, java-sdk, java2-compiler, java2-sdk, java5-sdk, java6-sdk, java7-sdk
+Section: non-free/java
+Priority: optional
+Homepage: http://www.oracle.com/technetwork/java
+Description: Sun Java(TM) Development Kit (JDK) 7
+ The JDK(TM) is a development environment for building applications,
+ applets, and components using the Java programming language.
+ .
+ The JDK includes tools useful for developing and testing programs
+ written in the Java programming language and running on the Java
+ Platform.
+ .
+ NOTE: You must accept Oracle's EULA prior to successfully installing
+ this package
