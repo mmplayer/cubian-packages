@@ -1,0 +1,23 @@
+Package: oracle-java7-jre
+Version: 1.0.1-1
+Architecture: armhf
+Maintainer: Cubian Maintainers <sophiasmth@gmail.com>
+Pre-Depends: debconf (>= 0.5) | debconf-2.0
+Depends: java-common (>= 0.24), locales, unixodbc, libc6
+Recommends: libasound2, libx11-6, libxext6, libxi6, libxtst6, libnss-mdns, gsfonts-x11
+Provides: java-runtime, java-runtime-headless, java-virtual-machine, java2-runtime, java2-runtime-headless, java5-runtime, java5-runtime-headless, java6-runtime, java6-runtime-headless, oracle-java7-bin 
+Suggests: binfmt-support
+Conflicts: binfmt-support (<< 1.1.2)
+Section: non-free/java
+Priority: optional
+Homepage: http://www.oracle.com/technetwork/java
+Description: Sun Java(TM) Runtime Environment (JRE) 6 (architecture dependent files)
+ The Sun Java Platform Standard Edition Runtime Environment (JRE) 6
+ contains the Java virtual machine, runtime class libraries, and
+ Java application launcher that are necessary to run programs written
+ in the Java progamming language. It is not a development environment and
+ doesn't contain development tools such as compilers or debuggers.
+ For development tools, see the Java Development Kit JDK(TM) 6
+ (package sun-java6-jdk).
+ .
+ This package contains architecture dependent files.

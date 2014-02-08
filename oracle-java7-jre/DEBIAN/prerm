@@ -1,0 +1,31 @@
+#!/bin/sh -e
+
+basedir=/usr/lib/jvm/java-7-oracle-1.7.0.51
+basediralias=/usr/lib/jvm/java-7-oracle
+jar_packs=''
+jre_tools='ControlPanel java java_vm javaws jcontrol keytool pack200 policytool rmid rmiregistry unpack200 orbd servertool tnameserv'
+
+for i in $jar_packs; do
+    jar=$(echo $i | sed 's/\.pack$/.jar/')
+    rm -f $basedir/$jar
+done
+
+rm -f $basedir/jre/lib/i386/client/classes.jsa
+
+if [ "$1" = "remove" ] || [ "$1" = "deconfigure" ]; then
+    for i in $jre_tools; do
+	update-alternatives --remove $i $basediralias/jre/bin/$i
+    done
+
+    if which update-binfmts >/dev/null; then
+	# try to remove and ignore the error
+	if [ -e /var/lib/binfmts/oracle-java7 ]; then
+	    update-binfmts --package oracle-java7 \
+		--remove jar /usr/bin/jexec || true
+	fi
+    fi
+
+    update-alternatives --remove jexec $basediralias/jre/lib/jexec
+fi
+
+

@@ -1,0 +1,12 @@
+oracle-java7-jre: unstripped-binary-or-object
+oracle-java7-jre: binary-or-shlib-defines-rpath
+oracle-java7-jre: shlib-with-non-pic-code
+oracle-java7-jre: shlib-with-executable-bit
+oracle-java7-jre: embedded-library
+oracle-java7-jre: shlib-without-PT_GNU_STACK-section
+oracle-java7-jre: copyright-should-refer-to-common-license-file-for-gpl
+oracle-java7-jre: image-file-in-usr-lib
+oracle-java7-jre: package-contains-empty-directory
+oracle-java7-jre: too-long-extended-description-in-templates
+oracle-java7-jre: embedded-zlib
+oracle-java7-jre: embedded-libjpeg
