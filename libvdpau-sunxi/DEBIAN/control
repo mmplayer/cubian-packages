@@ -1,0 +1,12 @@
+Package: libvdpau-sunxi
+Version: 1.0-1
+Section: video
+Priority: optional
+Architecture: armhf
+Depends: libc6 (>=2.13-28), libgcc1 (>= 1:4.4.0), libx11-6 (>= 2:1.4.99.1), libxext6
+Suggests: mplayer2
+Maintainer: cubian developer <sophiasmth@gmail.com>
+Description: experimental VDPAU implementation for sunxi SoCs.
+ Most features of full VDPAU are missing, only decoding of h264, mpeg1 and mpeg2
+ and output of software-decoded videos will work.
+ For more information: https://github.com/linux-sunxi/libvdpau-sunxi
