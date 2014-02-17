@@ -1,3 +1,4 @@
 chromium: embedded-library usr/lib/chromium/chromium: sqlite
 chromium: statically-linked-binary usr/lib/chromium/nacl_irt_x86_64.nexe
 chromium: statically-linked-binary usr/lib/chromium/nacl_irt_x86_32.nexe
+chromium: preinst-uses-dpkg-maintscript-helper-without-predepends

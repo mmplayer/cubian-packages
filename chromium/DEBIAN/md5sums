@@ -25,7 +25,7 @@ f5be451c8c4bd3b8a24d4df9c5271d6e  usr/share/icons/hicolor/32x32/apps/chromium.pn
 d47f5b63b3cb2cb8c66c363cbf338402  usr/share/icons/hicolor/48x48/apps/chromium.png
 364e8d053b857cb9e437b43d53f795a1  usr/share/icons/hicolor/64x64/apps/chromium.png
 5205df6a82a81b1f5334a3acee8504b1  usr/share/icons/hicolor/scalable/apps/chromium.svg
-ff0ec72e6588f8802de406a92244ba9b  usr/share/lintian/overrides/chromium
+5ee16c776783ca866c4ba23d01b4ae73  usr/share/lintian/overrides/chromium
 e33a3bb74c3697d1ef41afcdb8033d50  usr/share/man/man1/chromium.1.gz
 b73da5a3ba1c5a51f9f3ebc8cf1a0e1d  usr/share/menu/chromium
 d47f5b63b3cb2cb8c66c363cbf338402  usr/share/pixmaps/chromium.png
