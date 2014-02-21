@@ -1,0 +1,3 @@
+linux-headers-3.4.79-sun7i: binary-from-other-architecture
+linux-headers-3.4.79-sun7i: shell-script-fails-syntax-check
+linux-headers-3.4.79-sun7i: python-script-but-no-python-dep

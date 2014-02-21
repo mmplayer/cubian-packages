@@ -1,0 +1,15 @@
+Package: linux-image-3.4.79-sun7i
+Source: linux-source-3.4.79-sun7i
+Version: 3.4.79
+Architecture: armhf
+Maintainer: cubieplayer <sophiasmth@gmail.com>
+Pre-Depends: debconf (>= 0.2.17) | debconf-2.0
+Depends: coreutils (>= 5.96)
+Provides: linux-image, linux-image-3.4,linux-modules-3.4-sun7i
+Conflicts: linux-image-3.4.79-headless-sun7i
+Section: kernel
+Priority: optional
+Description: Linux 3.4.79 for allwinner A10 devices
+ The Linux kernel 3.4.79 and modules for use on allwinner A10 devices.
+ This kernel is developed and maintained by linux-sunxi
+ https://github.com/linux-sunxi/linux-sunxi.

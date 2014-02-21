@@ -1,0 +1,20 @@
+Package: linux-headers-3.4.79-sun7i
+Source: linux-source-3.4.79-sun7i
+Version: 3.4.79
+Architecture: armhf
+Maintainer: Unknown Kernel Package Maintainer <unknown@unconfigured.in.etc.kernel-pkg.conf>
+Installed-Size: 38419
+Recommends: libc6-dev | libc-dev, gcc | c-compiler, make (>= 3.80-10), binutils (>= 2.12), util-linux (>= 2.10o)
+Suggests: module-init-tools (>= 0.9.10), e2fsprogs (>= 1.29)
+Provides: linux-headers, linux-headers-3.4
+Section: devel
+Priority: optional
+Description: Header files related to Linux kernel, specifically,
+ version 3.4.79-sun7i
+ .
+ This package provides kernel header files for sites
+ that want the latest kernel headers for version
+ 3.4.79-sun7i.
+ Please read
+ /usr/share/doc/linux-headers-3.4.79-sun7i/debian.README.gz
+ for details
