@@ -92,13 +92,13 @@ usage(){
 cat<<EOF
 Usage: $0 options
 
-This script will update your system files to latest version. It respects the
-enviroment variable ROOT_PATH, it sets to '/' by default.
+This script will update your system files to the latest version. It respects the
+environment variable ROOT_PATH, it sets to '/' by default.
 
 It will update itself automatically. You can set environment variable UPDATE_SELF=0
 to disable it.
 
-You can aslo exports an environment variable http_proxy (case insensitive) to use a 
+You can also export an environment variable http_proxy (case insensitive) to use a 
 proxy server while updating.
 
 Options:
