@@ -1,0 +1,4 @@
+#!/bin/sh -e
+export VDPAU_DRIVER=sunxi
+cd /usr/lib/cubieplayer/
+python ./cubieplayer

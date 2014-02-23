@@ -1,0 +1,858 @@
+#!/usr/bin/env python
+#-*- coding:utf-8 -*-
+
+from PyQt4 import QtGui
+from PyQt4 import QtCore,Qt
+import sys,os,time
+
+from QColorScheme import QColorScheme
+
+PlayerName="Cubieplayer"
+class SettingMenuBar(object):
+   
+   def __init__(self):
+      object.__init__(self) 
+   def settingMenuBar(self):
+      self.menubar=self.menuBar()
+      self.file =self.menubar.addMenu(u"Menu(&F)")
+      self.edit =self.menubar.addMenu(u"Edit(&E)")
+      self.view =self.menubar.addMenu(u"View(&V)")
+      self.goto =self.menubar.addMenu(u"Goto(&G)")
+      self.sound=self.menubar.addMenu(u"Volumn(&S)")
+      self.help =self.menubar.addMenu(u"Help(&H)")
+
+      self.toolbar=self.addToolBar(u"Toolbar(&T)")
+
+      self.setMenuFile()
+      self.setMenuEdit()
+      self.setMenuView()
+      self.setMenuGoto()
+      self.setMenuSound()
+      self.setMenuHelp()
+      
+   def setMenuEdit(self):
+      
+      self.loop=QtGui.QAction(u"Loop Setting",self)
+      self.loop.setShortcut("Alt+L")
+      self.loop.setStatusTip(u"Loop Setting")
+      self.connect(self.loop,QtCore.SIGNAL("triggered()"),self.loop_dialog)
+      self.edit.addAction(self.loop)
+      
+      self.noloop=QtGui.QAction(u"Random Mode",self)
+      self.noloop.setShortcut("Alt+N")
+      self.noloop.setStatusTip(u"Random Mode")
+      self.connect(self.noloop,QtCore.SIGNAL("triggered()"),self.noloop_dialog)
+      self.edit.addAction(self.noloop)
+      
+      self.nosound=QtGui.QAction(u"Mute",self)
+      self.nosound.setShortcut("Alt+K")
+      self.nosound.setStatusTip(u"Mute")
+      self.connect(self.nosound,QtCore.SIGNAL("triggered()"),self.nosound_dialog)
+      self.edit.addAction(self.nosound)
+
+   def nosound_dialog(self):
+      
+      if self.nosound_bool:
+         self.process.write("mute 0\n")
+         self.nosound_bool=False
+      else:
+         self.nosound_bool=True
+         self.process.write("mute 1\n")
+
+   def noloop_dialog(self):
+      self.process.write("set_property loop -1\n")
+
+   def loop_dialog(self):
+      self.process.write("set_property loop 0\n")
+         
+   def setMenuView(self):
+
+      self.fullscreen=QtGui.QAction(QtGui.QIcon(self.icon_fullscreen),u"Fullscreen",self)
+      self.fullscreen.setShortcut("F")
+      self.fullscreen.setStatusTip(u"FullScreen")
+      self.connect(self.fullscreen,QtCore.SIGNAL("triggered()"),self.fullscreen_event)
+      self.view.addAction(self.fullscreen)
+      self.toolbar.addAction(self.fullscreen)
+
+      self.control=QtGui.QAction(u"Display Control",self)
+      self.control.setShortcut("Ctrl+J")
+      self.control.setStatusTip(u"Display Control")
+      self.connect(self.control,QtCore.SIGNAL("triggered()"),self.control_dialog)
+      self.view.addAction(self.control)
+
+      self.right_side=QtGui.QAction(QtGui.QIcon(self.icon_close),u"PlayList",self)
+      self.right_side.setShortcut("E")
+      self.right_side.setStatusTip(u"PlayList")
+      self.connect(self.right_side,QtCore.SIGNAL("triggered()"),self.dock_right_true)
+      self.view.addAction(self.right_side)
+      self.toolbar.addAction(self.right_side)
+      
+   def control_dialog(self):
+      
+      if self.is_fullscreen:
+         self.dock_right.close()
+         self.dock_bottom.close()
+         self.menubar.close()
+         self.toolbar.close()
+      else:
+         self.dock_bottom.show()
+         self.menubar.show()
+         self.toolbar.show()
+
+   def setup_fullscreen_control_timer(self):
+        if not self.fullscreen_control_timer_installed:
+            self.fullscreen_control_timer = QtCore.QTimer()
+            self.fullscreen_control_timer.start(5000)
+            self.fullscreen_control_timer.timeout.connect(self.autohide_fullscreen_control)
+            self.fullscreen_control_timer_installed=True
+
+   def show_fullscreen_control(self):
+        if self.fullscreen_control_timer_installed:
+            self.fullscreen_control_timer.stop()
+            self.fullscreen_control_timer_installed=False
+            self.setup_fullscreen_control_timer()
+        if not self.fullscreen_control_shown:
+            self.setCursor(QtCore.Qt.ArrowCursor)
+            self.dock_bottom.show()
+            self.menubar.show()
+            self.fullscreen_control_shown=True
+            self.setup_fullscreen_control_timer()
+
+   def autohide_fullscreen_control(self):
+        if self.is_fullscreen:
+            self.hide_fullscreen_control()
+            self.fullscreen_control_timer.stop()
+            self.fullscreen_control_timer_installed=False
+            self.setCursor(QtCore.Qt.BlankCursor)
+
+   def hide_fullscreen_control(self):
+        if self.fullscreen_control_shown:
+            self.dock_bottom.close()
+            self.menubar.close()
+            self.fullscreen_control_shown=False
+   
+   def setMenuGoto(self):
+
+      self.quick_play = QtGui.QAction(QtGui.QIcon(self.icon_quick),u"Forward",self)
+      #self.quick_play.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Right))
+      self.quick_play.setStatusTip(u"Forward")
+      self.connect(self.quick_play,QtCore.SIGNAL("triggered()"),self.button_forward_event)
+
+      self.goto.addAction(self.quick_play)
+
+      self.slow_play = QtGui.QAction(QtGui.QIcon(self.icon_slow),u"Backward",self)
+      self.slow_play.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Left))
+      self.slow_play.setStatusTip(u"Backward")
+      self.connect(self.slow_play,QtCore.SIGNAL("triggered()"),self.button_back_event)
+
+      self.goto.addAction(self.slow_play)
+      self.toolbar.addAction(self.slow_play)
+      self.toolbar.addAction(self.quick_play)
+
+      
+   def setMenuSound(self):
+      
+      self.add_sound = QtGui.QAction(QtGui.QIcon(self.icon_add_sound),u"Increase Volumn",self)
+      self.add_sound.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_At))
+      self.add_sound.setStatusTip(u"Increase Volumn")
+      self.connect(self.add_sound,QtCore.SIGNAL("triggered()"),self.add_sound_dialog)
+      
+      self.sound.addAction(self.add_sound)
+
+      self.sub_sound = QtGui.QAction(QtGui.QIcon(self.icon_sub_sound),u"Decrease Volumn",self)
+      self.sub_sound.setShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Slash))
+      self.sub_sound.setStatusTip(u"Decrease Volumn")
+      self.connect(self.sub_sound,QtCore.SIGNAL("triggered()"),self.sub_sound_dialog)
+
+      self.sound.addAction(self.sub_sound)
+      self.toolbar.addAction(self.sub_sound)
+      self.toolbar.addAction(self.add_sound)
+
+   def sub_sound_dialog(self):
+      
+      self.process.write("volume -1\n")
+      self.sound_slider.setValue(self.sound_slider.value()-1)
+      self.sound_slider.setStatusTip(u"Volumn"+str(self.sound_slider.value()))
+
+   def add_sound_dialog(self):
+      
+      self.process.write("volume +1\n")
+      self.sound_slider.setValue(self.sound_slider.value()+1)
+      self.sound_slider.setStatusTip(u"Volumn"+str(self.sound_slider.value()))
+
+   def setMenuFile(self):
+      self.open = QtGui.QAction(QtGui.QIcon(self.icon_open),u"Open(&O)",self)
+#      self.open.setIcon(QtGui.QIcon(self.icon_open))
+      self.open.setShortcut("Ctrl+O")
+      self.open.setStatusTip(u"OpenFile")
+      self.connect(self.open,QtCore.SIGNAL("triggered()"),self.showFile_dialog)
+      
+      self.file.addAction(self.open)
+      self.toolbar.addAction(self.open)
+      
+      #open location
+      self.open_location = QtGui.QAction(QtGui.QIcon(self.icon_open_location),u"Open Location(&L)",self)
+      self.open_location.setShortcut("Ctrl+G")
+      self.open_location.setStatusTip(u"Open Location")
+      self.connect(self.open_location,QtCore.SIGNAL("triggered()"),self.open_location_dialog)
+      self.file.addAction(self.open_location)
+      self.toolbar.addAction(self.open_location)
+
+      self.exit = QtGui.QAction(QtGui.QIcon(self.icon_exit),u"Exit(&Q)",self)
+      self.exit.setShortcut("Ctrl+Q")
+      self.exit.setStatusTip(u"Exit")
+      self.connect(self.exit,QtCore.SIGNAL("triggered()"),self,QtCore.SLOT("close()"))
+
+      self.file.addAction(self.exit)
+      self.toolbar.addAction(self.exit)
+
+   def setMenuHelp(self):
+      self.helpinfo = QtGui.QAction(QtGui.QIcon(self.icon_ask),u"Help(&H)",self)
+      self.helpinfo.setShortcut("F1")
+      self.helpinfo.setStatusTip(u"Help")
+      self.connect(self.helpinfo,QtCore.SIGNAL("triggered()"),self.helpinfo_dialog)
+      
+      self.help.addAction(self.helpinfo)
+      self.toolbar.addAction(self.helpinfo)
+      
+      #version
+      self.version = QtGui.QAction(QtGui.QIcon(self.icon_version),u"About(&A)",self)
+      self.version.setShortcut("Ctrl+A")
+      self.version.setStatusTip(u"About")
+      self.connect(self.version,QtCore.SIGNAL("triggered()"),self.version_dialog)
+      
+      self.help.addAction(self.version)
+      self.toolbar.addAction(self.version)
+
+   def helpinfo_dialog(self):
+      
+      self.helpinfo_frame=QtGui.QFrame()
+      self.helpinfo_edit=QtGui.QTextBrowser()
+      
+      helpinfo=u"""
+            Cubieplayer is a media player on Cubian. It use Mplayer is media play backend, PyQt as GUI toolkit.
+            
+            ShortcutKeys:
+            1. Enter/Return		Toggle fullscreen
+            2. Space        		Pause/Play
+            3. Ctrl+q			Exit
+            4. Ctrl+o                   Open media file
+            5. F                        Full screen
+            6. E                        Toggle play list
+            
+            Author: cubieplayer <sophiasmth@gmail.com>
+            """
+         
+      self.helpinfo_edit.setText(helpinfo)
+      
+      self.helpinfo_layout_1=QtGui.QHBoxLayout()
+      self.helpinfo_layout_1.addWidget(self.helpinfo_edit)
+      
+      self.helpinfo_button_yes=QtGui.QPushButton(u"Confirm")
+      self.connect(self.helpinfo_button_yes,QtCore.SIGNAL("clicked()"),self.helpinfo_frame,QtCore.SLOT("close()"))
+      
+      self.helpinfo_layout_2=QtGui.QHBoxLayout()
+      self.helpinfo_layout_2.addWidget(self.helpinfo_button_yes)
+      
+      self.helpinfo_layout=QtGui.QVBoxLayout()
+      self.helpinfo_layout.addLayout(self.helpinfo_layout_1)
+      self.helpinfo_layout.addLayout(self.helpinfo_layout_2)
+      self.helpinfo_frame.setLayout(self.helpinfo_layout)
+      self.helpinfo_frame.show()
+      self.helpinfo_frame.resize(500,500)
+
+      
+      screen = QtGui.QDesktopWidget().screenGeometry()
+      size =  self.geometry()
+      self.helpinfo_frame.move((screen.width()-size.width())/2, (screen.height()-size.height())/2)
+
+   def version_dialog(self):
+      
+      self.version_frame=QtGui.QFrame()
+      self.version_edit=QtGui.QTextBrowser()
+      
+      versioninfo=u"""
+            
+            Author: Cubieplayer
+            
+            Version: 1.0-alpha
+            
+            Release: 18th FEB, 2014
+            
+            Contact: sophiasmth@gmail.com
+
+            All rights reserved.
+            """
+         
+      self.version_edit.setText(versioninfo)
+      
+      self.version_layout_1=QtGui.QHBoxLayout()
+      self.version_layout_1.addWidget(self.version_edit)
+      
+      self.version_button_yes=QtGui.QPushButton(u"Confirm")
+      self.connect(self.version_button_yes,QtCore.SIGNAL("clicked()"),self.version_frame,QtCore.SLOT("close()"))
+      
+      self.version_layout_2=QtGui.QHBoxLayout()
+      self.version_layout_2.addWidget(self.version_button_yes)
+      
+      self.version_layout=QtGui.QVBoxLayout()
+      self.version_layout.addLayout(self.version_layout_1)
+      self.version_layout.addLayout(self.version_layout_2)
+      self.version_frame.setLayout(self.version_layout)
+      self.version_frame.show()
+      self.version_frame.resize(500,500)
+
+      
+      screen = QtGui.QDesktopWidget().screenGeometry()
+      size =  self.geometry()
+      self.version_frame.move((screen.width()-size.width())/2, (screen.height()-size.height())/2)
+
+   def keyPress_dialog(self, event):
+      
+      if event.key() == QtCore.Qt.Key_Escape:
+         self.process.close()
+         self.close()
+
+   def open_location_dialog(self):
+      
+      self.help_frame=QtGui.QFrame()
+      self.help_edit=QtGui.QLineEdit("/home/")
+      self.help_button_yes=QtGui.QPushButton(u"Open")
+      self.help_button_no=QtGui.QPushButton(u"Cancel")
+
+      self.connect(self.help_button_yes,QtCore.SIGNAL("clicked()"),self.open_newfile_dialog)
+      self.connect(self.help_button_no,QtCore.SIGNAL("clicked()"),self.help_button_no_dialog)     
+      
+      self.help_layout1=QtGui.QHBoxLayout()
+      self.help_layout1.addWidget(self.help_edit)
+      
+      self.help_layout2=QtGui.QHBoxLayout()
+      self.help_layout2.addWidget(self.help_button_yes)
+      self.help_layout2.addWidget(self.help_button_no)
+      
+      self.help_layout=QtGui.QVBoxLayout()
+      self.help_layout.addLayout(self.help_layout1)
+      self.help_layout.addLayout(self.help_layout2)
+      self.help_frame.setLayout(self.help_layout)
+      self.help_frame.show()
+
+      screen = QtGui.QDesktopWidget().screenGeometry()
+      size =  self.geometry()
+      self.help_frame.move((screen.width()-size.width())/2, (screen.height()-size.height())/2)
+      
+
+   def help_button_no_dialog(self):
+      self.help_frame.close()
+   def open_newfile_dialog(self):
+      
+      thefile=self.help_edit.text()
+      self.change_movie_file(thefile)
+      self.help_frame.close()
+
+
+class SettingIcons(object):
+    
+    def __init__(self):
+
+
+       self.media_icons_path = "./"
+       self.icon_uplayer = self.media_icons_path + "icons/up.jpeg"
+       self.icon_add = self.media_icons_path + "icons/add.png"
+       self.icon_del = self.media_icons_path + "icons/del.png"
+       self.icon_save = self.media_icons_path + "icons/save.png"
+       self.icon_up = self.media_icons_path + "icons/up.png"
+       self.icon_down = self.media_icons_path + "icons/down.png"
+        
+       self.icon_back = self.media_icons_path + "icons/back.png"
+       self.icon_quickback = self.media_icons_path + "icons/quickback.png"
+       self.icon_play = self.media_icons_path + "icons/play.png"
+       self.icon_pause = self.media_icons_path + "icons/pause.png"
+       self.icon_forward = self.media_icons_path + "icons/forward.png"
+       self.icon_quickforward = self.media_icons_path + "icons/quickforward.png"
+        
+       self.icon_sound = self.media_icons_path + "icons/sound.png"
+       self.icon_close = self.media_icons_path + "icons/close.png"
+       self.icon_version = self.media_icons_path + "icons/version.png"
+       self.icon_fullscreen = self.media_icons_path + "icons/ubuntu.png"
+       self.icon_getscreen = self.media_icons_path + "incons/getscreen.png"
+    
+       self.icon_ask = self.media_icons_path + "icons/ask.png"
+       self.icon_open = self.media_icons_path + "icons/open.png"
+       self.icon_open_location = self.media_icons_path + "icons/open_location.png"
+       self.icon_exit = self.media_icons_path + "icons/shutdown.png"
+        
+       self.icon_goto = self.media_icons_path + "icons/goto.png"
+       self.icon_quick = self.media_icons_path + "icons/quick2.png"
+       self.icon_slow = self.media_icons_path + "icons/slow2.png"
+        
+       self.icon_add_sound = self.media_icons_path + "icons/add_sound.png"
+       self.icon_sub_sound = self.media_icons_path + "icons/sub_sound.png"
+
+       self.icon_splash = self.media_icons_path + "icons/splash.JPG"
+       self.icon_cash = self.media_icons_path + "icons/cash.png"
+        
+       self.movieFile = ""
+       if len(sys.argv) > 1:
+          self.movieFile = QtCore.QString(QtCore.QString.fromUtf8(sys.argv[1]))
+            
+       self.side_bool = False          
+       self.playorpause = True         
+       self.is_fullscreen=False        
+       self.fullscreen_control_shown=False
+       self.fullscreen_control_timer_installed=False
+       self.nosound_bool=True         
+
+       self.movieFile_dict = {}       
+
+class ProgressThread(QtCore.QThread):
+    def __init__(self,process):
+        QtCore.QThread.__init__(self)
+        self.player=process
+        self.abort=False
+
+    def run(self):
+	while self.player:
+            if self.abort:
+                print "aborted"
+                break
+            try:
+                self.player.write("get_time_pos\n")
+                self.player.write("get_percent_pos\n")
+                time.sleep(.1)
+            except Exception as e:
+                self.player=None
+
+class SettingMovieScreen(object):
+    def update_movie(self):
+
+        current_milli_time = int(round(time.time() * 1000))
+
+        if not hasattr(self, "last_update_movie_time"):
+            self.last_update_movie_time=current_milli_time - 1001
+
+        if (current_milli_time - self.last_update_movie_time) < 1000:
+            return
+
+        self.last_update_movie_time=current_milli_time
+        if os.path.exists("/usr/local/bin/mplayer"):
+	    self.program="/usr/local/bin/mplayer"
+	elif os.path.exists("/usr/bin/mplayer"):
+	    self.program = "/usr/bin/mplayer"
+	else:
+	    print "can not find mplayer"
+	    sys.exit()
+
+        self.text = " -slave -vo vdpau:fps=60 -vc ffmpeg12vdpau,ffh264vdpau, -input file=/tmp/cmd "+self.movieFile+" -wid "+str(self.frame_center.winId())+" &"
+        
+        if hasattr(self,"progressThread") and self.progressThread:
+            self.progressThread.abort=True
+            self.progressThread.wait()
+        self.process = QtCore.QProcess(self.frame_center)
+        self.progressThread = ProgressThread(self.process)
+        self.progressThread.start()
+
+        if self.movieFile:
+            self.process.start(self.program+self.text,QtCore.QIODevice.ReadWrite)
+            self.process.readyReadStandardOutput.connect(self.back_message_dialog);
+
+            self.length = self.process.write("get_time_length\n")
+            self.pos = self.process.write("get_time_pos\n")
+            self.percent_pos=self.process.write("get_percent_pos\n")
+        
+            self.movieFile_basename=os.path.basename(unicode(self.movieFile.toUtf8(),'utf8','ignore').encode('utf8'))
+            self.movieFile_pathname=os.path.dirname(unicode(self.movieFile.toUtf8(),'utf8','ignore').encode('utf8'))+"/"
+            self.setWindowTitle(self.movieFile_basename)
+            if self.movieFile_basename not in self.movieFile_dict:
+                self.movieFile_dict[self.movieFile_basename]=self.movieFile_pathname
+                self.listwidget.addItem(self.movieFile_basename)
+        else:
+            self.progressThread.abort=True
+            self.progressThread.wait()
+
+
+    def format_time(self,seconds):
+        m, s = divmod(seconds, 60)
+        h, m = divmod(m, 60)
+        return "%d:%02d:%02d" % (h, m, s)
+
+    def back_message_dialog(self):
+        while(self.process.canReadLine()):
+            line=self.process.readLine() # QByteArray
+            #print r"%s"%line
+            if line.startsWith("ANS_LENGTH="):
+                self.length=line[11:][:-1]
+                self.length=int(float(self.length)*100)
+                self.slider.setRange(0,self.length)
+
+            if self.slider_mousepressed:
+               continue
+
+            if line.startsWith("ANS_TIME_POSITION="):
+                self.pos=line[18:][:-1]
+                self.pos=int(float(self.pos)*100)
+                self.slider.setValue(self.pos)
+            if self.pos is not None and self.length is not None:
+                time_total=self.format_time(self.length/100.0)
+                time_eclapsed=self.format_time(self.pos/100.0)
+                self.length_label.setText("%s/%s"%(time_eclapsed,time_total))
+            if line.endsWith("End of file)\n"):
+                self.slider.setValue(self.length)
+                time_total=self.format_time(self.length/100.0)
+                self.length_label.setText("%s/%s"%(time_total,time_total))
+                self.movieEnd()
+
+    def movieEnd(self):
+        if self.is_fullscreen:
+            self.fullscreen_event()
+        self.setWindowTitle(PlayerName)
+        self.updateCenterFrame()
+
+    def updateCenterFrame(self):
+        u"""
+          Why we do this? Well, I don't know.
+          If we don't do it. The next play will be invisble
+          and self.process is unusable
+         """
+
+        if self.frame_center:
+           self.frame_center.setParent(None)
+           self.frame_center=None
+        self.frame_center = MainFrame(self)
+        self.setCentralWidget(self.frame_center)
+        self.frame_center.show()
+
+        self.movieFile=""
+        self.update_movie()
+
+    def settingMovieScreen(self):
+        
+        self.frame_center = MainFrame(self)
+        self.setCentralWidget(self.frame_center)
+        self.frame_center.show()
+
+        self.splashscreen=QtGui.QSplashScreen()
+        self.splashscreen.setPixmap(QtGui.QPixmap(self.icon_splash))
+        self.splashscreen.show()
+        
+        
+        self.dock_right = QtGui.QDockWidget(self)
+        self.dock_right.setAllowedAreas(QtCore.Qt.RightDockWidgetArea)
+        self.dock_right.setShown(False)
+
+        self.frame_right=  QtGui.QFrame(self)
+
+        self.dock_right.setWidget(self.frame_right)
+        self.dock_right.setStatusTip(u"Playlist")
+        self.addDockWidget(QtCore.Qt.RightDockWidgetArea,self.dock_right)
+
+        self.listwidget = QtGui.QListWidget(self.frame_right)
+        self.listwidget.clicked.connect(self.list_action_event)
+        
+        self.layout_1 = QtGui.QHBoxLayout()
+        self.layout_1.addWidget(self.listwidget)
+
+        self.button_add = QtGui.QPushButton(QtGui.QIcon(self.icon_add),"")
+        self.button_add.setStatusTip(u"Add File")
+        
+        self.button_del = QtGui.QPushButton(QtGui.QIcon(self.icon_del),"")
+        self.button_del.setStatusTip(u"Delete File")
+        
+        self.button_save = QtGui.QPushButton(QtGui.QIcon(self.icon_cash),"")
+        self.button_save.setStatusTip(u"Remove All")
+        
+        self.button_up = QtGui.QPushButton(QtGui.QIcon(self.icon_up),"")
+        self.button_up.setStatusTip(u"Order ASC")
+        
+        self.button_down = QtGui.QPushButton(QtGui.QIcon(self.icon_down),"")
+        self.button_down.setStatusTip(u"Order DESC")
+        
+        self.layout_2 = QtGui.QHBoxLayout()
+        self.layout_2.addWidget(self.button_add)
+        self.layout_2.addWidget(self.button_del)
+        self.layout_2.addWidget(self.button_save)
+        self.layout_2.addWidget(self.button_up)
+        self.layout_2.addWidget(self.button_down)
+
+        self.layout_3 = QtGui.QVBoxLayout(self.frame_right)
+        self.layout_3.addLayout(self.layout_1)
+        self.layout_3.addLayout(self.layout_2)
+        self.dock_right.adjustSize()
+        
+        self.dock_bottom=QtGui.QDockWidget(self)
+        self.frame_bottom=QtGui.QFrame(self)
+
+        #?
+        self.time_label=QtGui.QLabel(u"TIme")
+        self.slider = QtGui.QSlider(QtCore.Qt.Horizontal) # ?
+      
+        self.slider.setRange(0,200)     # ?
+        self.slider.setValue(0)
+        self.slider.setStatusTip(u"Progress"+str(self.slider.value()))
+        self.slider.sliderPressed.connect(self.slider_pressed)
+        self.slider.sliderMoved.connect(self.slider_moved)
+        self.slider.sliderReleased.connect(self.slider_released)
+        self.slider_mousepressed=False
+
+        self.length_label=QtGui.QLabel("")
+        self.layout = QtGui.QHBoxLayout()
+        self.layout.addWidget(self.time_label)
+        self.layout.addWidget(self.slider)
+        self.layout.addWidget(self.length_label)
+
+        self.button_back = QtGui.QPushButton(QtGui.QIcon(self.icon_back),"")
+        self.button_back.autoFillBackground() 
+        self.button_back.setStatusTip(u"Backward")
+        
+        self.button_quickback = QtGui.QPushButton(QtGui.QIcon(self.icon_quickback),"")
+        self.button_quickback.setStatusTip(u"Backwward Quick")
+        
+        self.button_play = QtGui.QPushButton(QtGui.QIcon(self.icon_pause),"")
+        self.button_play.setShortcut("Space")
+        self.button_play.setStatusTip(u"Play")
+        
+        self.button_pause = QtGui.QPushButton(QtGui.QIcon(self.icon_pause),"")
+        self.button_pause.setStatusTip(u"Pause")
+        
+        self.button_forward = QtGui.QPushButton(QtGui.QIcon(self.icon_forward),"")
+        self.button_forward.setStatusTip(u"Forward")
+        
+        self.button_quickforward = QtGui.QPushButton(QtGui.QIcon(self.icon_quickforward),"")
+        self.button_quickforward.setStatusTip(u"QuickForward")
+        
+        self.button_fullscreen = QtGui.QPushButton(QtGui.QIcon(self.icon_fullscreen),"")
+        self.button_fullscreen.setStatusTip(u"Fullscreen")
+
+        self.connect(self.button_forward,QtCore.SIGNAL("clicked()"),self.button_forward_event)
+        
+        self.connect(self.button_quickback,QtCore.SIGNAL("clicked()"),self.button_quickback_event)
+        
+        self.connect(self.button_quickforward,QtCore.SIGNAL("clicked()"),self.button_quickforward_event)
+        
+        self.connect(self.button_back,QtCore.SIGNAL("clicked()"),self.button_back_event)
+        
+        self.connect(self.button_fullscreen,QtCore.SIGNAL("clicked()"),self.fullscreen_event)
+        
+        self.connect(self.button_play,QtCore.SIGNAL("clicked()"),self.play_event)
+        
+        self.sound_label = QtGui.QLabel(u"Volumn")
+        self.sound_label.show()
+        
+        self.sound_slider = QtGui.QSlider(QtCore.Qt.Horizontal)
+
+        self.sound_slider.setRange(0,100)
+        self.sound_slider.setValue(88)
+        self.sound_slider.setStatusTip(u"Volumn"+str(self.sound_slider.value()))
+        self.connect(self.sound_slider,QtCore.SIGNAL("valueChanged(int)"),self.sound_slider_dialog)
+
+        
+        self.button_side = QtGui.QPushButton(QtGui.QIcon(self.icon_close),"")
+        self.button_side.setStatusTip(u"Toggle Playlist")
+        self.connect(self.button_side,QtCore.SIGNAL("clicked()"),self.dock_right_true)
+
+        self.layout_2 = QtGui.QHBoxLayout()
+        self.layout_2.addWidget(self.button_quickback)
+        self.layout_2.addWidget(self.button_back)
+        self.layout_2.addWidget(self.button_play)
+
+        self.layout_2.addWidget(self.button_forward)
+        self.layout_2.addWidget(self.button_quickforward)
+        self.layout_2.addWidget(self.button_fullscreen)
+
+        self.layout_2.addStretch(10)
+        self.layout_2.addWidget(self.sound_label)
+        self.layout_2.addWidget(self.sound_slider)
+        self.layout_2.addWidget(self.button_side)
+        
+
+        self.layout_3 = QtGui.QVBoxLayout(self.frame_bottom)
+        self.layout_3.addLayout(self.layout)
+        self.layout_3.addLayout(self.layout_2)
+
+        #
+        self.dock_bottom.setWidget(self.frame_bottom)
+        #self.dock_bottom.setWindowTitle(u"Control bar")
+        self.dock_bottom.setStatusTip(u"Control bar")
+        self.dock_bottom.DockWidgetClosable = False
+        self.addDockWidget(QtCore.Qt.BottomDockWidgetArea,self.dock_bottom)
+
+        self.setCorner(QtCore.Qt.Corner(3),QtCore.Qt.RightDockWidgetArea)
+
+        self.update_movie()
+
+
+    def slider_pressed(self):
+        self.slider_mousepressed=True
+        #self.process.write("seek %d 2" % index + "\n")
+
+    def slider_moved(self):
+        pass
+
+    def slider_released(self):
+        self.slider_mousepressed=False
+        self.process.write("seek %.1f 2" % (int(self.slider.value())/100.0) + "\n")
+
+    def slider_time_dialog(self):
+        self.process.write("seek "+str(self.slider.value())+"\n")
+        self.slider.setStatusTip(u"Progress"+str(self.slider.value()))
+        
+    def sound_slider_dialog(self):
+        
+        value=self.sound_slider.value()
+        self.process.write("set_property volume "+str(value)+" 2\n")
+        self.sound_slider.setStatusTip(u"Volumn"+str(self.sound_slider.value()))
+
+    def button_back_event(self):
+        
+        #self.process.write("seek -1 0\n")
+        self.slider.setValue(self.slider.value()-1)
+        self.slider.setStatusTip(u"Goto"+str(self.slider.value()))
+        
+    def button_forward_event(self):
+        
+        #self.process.write("seek +1 0\n")
+        self.slider.setValue(self.slider.value()+1)
+
+        self.slider.setStatusTip(u"Goto"+str(self.slider.value()))
+        
+    def button_quickback_event(self):
+        
+        #self.process.write('seek -5 0\n')
+        self.slider.setValue(self.slider.value()-5)
+        self.slider.setStatusTip(u"Goto"+str(self.slider.value()))
+        
+    def button_quickforward_event(self):
+        
+        #self.process.write("seek +5 0\n")
+        self.slider.setValue(self.slider.value()+5)
+        self.slider.setStatusTip(u"Goto"+str(self.slider.value()))
+
+    def play_event(self):
+        
+        self.process.write("pause\n")
+        self.playorpause = not self.playorpause
+        
+        if self.playorpause:
+            self.button_play.setIcon(QtGui.QIcon(self.icon_pause))
+            self.button_play.setStatusTip(u"Pause")
+        else:
+            self.button_play.setIcon(QtGui.QIcon(self.icon_play))
+            self.button_play.setStatusTip(u"PLay")
+
+    def dock_right_true(self):
+        
+        self.side_bool = not self.side_bool
+        self.dock_right.setShown(self.side_bool)
+
+        
+    def list_action_event(self, index):
+        # self.setWindowTitle(self.movieFile_basename)
+        # self.movieFile_dict[self.movieFile_basename]=self.movieFile_pathname
+        # self.listwidget.addItem(self.movieFile_basename)
+        # print 'selected item index found at %s with data: %s' % (index.row(), index.data().toString())
+
+        basename=str(index.data().toString())
+        if basename in self.movieFile_dict:
+            fullname="%s%s" % (self.movieFile_dict[basename], basename)
+            fullname=QtCore.QString(QtCore.QString.fromUtf8(fullname))
+            self.change_movie_file(fullname)
+
+    def setCmd(self):
+        
+        if os.path.exists("/tmp/cmd"):
+            os.remove("/tmp/cmd")
+
+        os.mkfifo("/tmp/cmd")
+        
+    def play_event_default(self):
+        
+        self.playorpause = True
+        self.button_play.setIcon(QtGui.QIcon(self.icon_pause))
+        
+    def showFile_dialog(self):
+        
+        filename = QtGui.QFileDialog.getOpenFileName(self, u'Open File',self.lastOpenedDir or '/home')
+
+        self.lastOpenedDir=os.path.dirname(str(filename))
+        if filename == '':
+            return
+        self.change_movie_file(filename)
+        
+    def change_movie_file(self,filename=None):
+        
+        self.movieFile = filename
+        self.process.write("quit\n")
+        self.play_event_default()
+        self.setCmd()
+        self.slider.setValue(0)
+        self.update_movie()
+        
+    def fullscreen_event(self):
+        if self.is_fullscreen:
+            self.is_fullscreen=False
+            self.showNormal()
+            self.control_dialog()
+            self.frame_center.disableMouseTracking()
+        else:
+            self.is_fullscreen=True
+            self.showFullScreen()
+            self.control_dialog()
+            self.frame_center.enableMouseTracking()
+
+class MainFrame(QtGui.QFrame):
+
+    def __init__(self,obj):
+        QtGui.QFrame.__init__(self,obj)
+        self.obj=obj
+
+    def enableMouseTracking(self):
+        self.setMouseTracking(True)
+
+    def disableMouseTracking(self):
+        self.setMouseTracking(False)
+
+    def mouseMoveEvent(self, event):
+        self.obj.show_fullscreen_control()
+
+class CubiePlayer(QtGui.QMainWindow,SettingMenuBar,SettingMovieScreen,SettingIcons):
+    
+    def __init__(self):
+        
+        QtGui.QMainWindow.__init__(self)
+        self.ColorScheme = QColorScheme()
+        self.ColorScheme.loadSimpleScheme(os.path.split( __file__ )[0] + "/QColorScheme/Presets/SimpleNuke.ini")
+	SettingMenuBar.__init__(self)
+	SettingMovieScreen.__init__(self)
+        SettingIcons.__init__(self)
+        
+        self.resize(600,600)
+        self.setWindowTitle(PlayerName)
+        self.setWindowIcon(QtGui.QIcon(self.icon_uplayer))
+        #QtGui.QToolTip.setFont(QtGui.QFont('OldEnglish', 10))
+
+        screen = QtGui.QDesktopWidget().screenGeometry()
+        size =  self.geometry()
+        self.move((screen.width()-size.width())/2, (screen.height()-size.height())/2)
+
+        
+        self.settingMenuBar()
+        self.settingMovieScreen()
+
+        self.lastOpenedDir=None
+
+    def keyReleaseEvent(self, event):
+        if event.key() == QtCore.Qt.Key_Enter or event.key() == QtCore.Qt.Key_Return:
+            self.fullscreen_event()
+        elif event.key() == QtCore.Qt.Key_Space and self.is_fullscreen and self.fullscreen_control_shown is False:
+            self.play_event()
+
+
+        
+def main():
+    app = QtGui.QApplication(sys.argv)
+    w = CubiePlayer()
+    w.show()
+    sys.exit(app.exec_())
+      
+if __name__ == '__main__':
+    main()
+    os.system("rm /tmp/cmd")

@@ -1,0 +1,9 @@
+Package: cubieplayer
+Version: 1.0-1
+Section: video
+Priority: optional
+Architecture: armhf
+Depends: python (>= 2.6), python-qt4 (>= 4.9), mplayer2 (>= 2.0), libvdpau-sunxi(>= 1.0)
+Maintainer: cubian developer <sophiasmth@gmail.com>
+Description: media player on cubian
+ A powerful mediaplayer on cubian system
