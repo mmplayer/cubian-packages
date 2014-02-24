@@ -22,12 +22,12 @@ case "$1" in
         else
             chmod 4755 /usr/bin/udevil
         fi
-		which systemctl > /dev/null
-		if [ $? -eq 0 ];then
+		
+		if which systemctl > /dev/null;then
 			set +e
 			systemctl enable devmon.service > /dev/null 2>&1
-			set -e
 			systemctl start devmon.service
+			set -e
 		fi
         ;;
 

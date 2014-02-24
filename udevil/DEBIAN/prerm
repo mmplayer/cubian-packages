@@ -1,12 +1,11 @@
 #! /bin/sh
 set -e
 
-which systemctl > /dev/null
-if [ $? -eq 0 ];then
+if which systemctl > /dev/null;then
 	set +e
 	systemctl stop devmon.service > /dev/null 2>&1
-	set -e
 	systemctl disable devmon.service
+	set -e
 fi
 
 # dh_installdeb will replace this with shell code automatically
