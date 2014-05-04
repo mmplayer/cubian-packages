@@ -297,6 +297,7 @@ kernel/drivers/rtc/rtc-sun4i.ko
 kernel/drivers/scsi/scsi_mod.ko
 kernel/drivers/scsi/sd_mod.ko
 kernel/drivers/scsi/sr_mod.ko
+kernel/drivers/spi/spi-sun7i.ko
 kernel/drivers/staging/android/logger.ko
 kernel/drivers/tty/serial/serial_core.ko
 kernel/drivers/tty/serial/8250/8250.ko
