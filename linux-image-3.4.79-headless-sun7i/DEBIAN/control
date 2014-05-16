@@ -9,7 +9,7 @@ Provides: linux-image, linux-image-3.4,linux-modules-3.4-sun7i
 Conflicts: linux-image-3.4.79-sun7i
 Section: kernel
 Priority: optional
-Description: Linux 3.4.79 for allwinner A10 devices
- The Linux kernel 3.4.79 and modules for use on allwinner A10 devices.
+Description: Linux 3.4.79 for allwinner A20 devices
+ The Linux kernel 3.4.79 and modules for use on allwinner A20 devices.
  This kernel is developed and maintained by linux-sunxi
  https://github.com/linux-sunxi/linux-sunxi.
