@@ -134,7 +134,7 @@ mount $NAND_ROOT_DEVICE $MNT_ROOT
 installBootloader(){
 rm -rf $MNT_BOOT/*
 rsync -avc $BOOTLOADER/* $MNT_BOOT
-rsync -avc /boot/script.bin /boot/uEnv.txt /boot/uImage $MNT_ROOT/boot/
+rsync -avc /boot/script.bin /boot/uEnv.txt /boot/uImage* $MNT_ROOT/boot/
 }
 
 installRootfs(){
