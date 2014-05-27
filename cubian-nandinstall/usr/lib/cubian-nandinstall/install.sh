@@ -20,7 +20,16 @@
 
 set -e
 
+TESTING=false;
+
+if [[ "$1" = "test" ]];then
+	TESTING=true;
+fi
+
 CWD="/usr/lib/cubian-nandinstall"
+
+FLAG=".reboot-nand-install.pid"
+NANDPART="${CWD}/nand-part"
 
 MMC_DEVICE="/dev/mmcblk0"
 NAND_DEVICE="/dev/nand"
@@ -66,6 +75,10 @@ echoRed(){
 	echo "${COLOR_RED}${1}${COLOR_NORMAL}"
 }
 
+echoYellow(){
+	echo "${COLOR_YELLOW}${1}${COLOR_NORMAL}"
+}
+
 echoGreen(){
 	echo "${COLOR_GREEN}${1}${COLOR_NORMAL}"
 }
@@ -94,17 +107,15 @@ done
 }
 
 formatNand(){
-tar -xzOf $CUBIAN_PART | dd of=$NAND_DEVICE
-sync
+if [[ "$DEVICE_TYPE" = "${DEVICE_A20}" ]];then
+(echo y;) | nand-part -f a20 /dev/nand 32768 'bootloader 2048' 'magic 512' 'linux 0'
+else
+(echo y;) | nand-part -f a10 /dev/nand 16 'bootloader 2048' 'linux 0'
+fi
 }
 
 nandPartitionOK(){
-dd if=$NAND_DEVICE of=$CURRENT_PART_DUMP bs=1M count=1>/dev/null 2>&1
-md51=$(md5sum $CURRENT_PART_DUMP | cut -c1-32)
-md52=$(tar -xzOf $CUBIAN_PART | md5sum | cut -c1-32)
-rm $CURRENT_PART_DUMP
-
-if [[ "$md51" = "$md52" ]];then
+if [[ -f $FLAG ]];then
 	return 0
 else
 	return 1
@@ -114,6 +125,9 @@ fi
 mkFS(){
 mkfs.vfat $NAND_BOOT_DEVICE
 mkfs.ext4 $NAND_ROOT_DEVICE
+tune2fs -o journal_data_writeback $NAND_ROOT_DEVICE
+tune2fs -O ^has_journal $NAND_ROOT_DEVICE
+e2fsck -f $NAND_ROOT_DEVICE
 if [[ -n "$NAND_MAGIC_DEVICE" ]];then
 	echo -e 'ANDROID!\0\0\0\0\0\0\0\0\c' > $NAND_MAGIC_DEVICE
 fi
@@ -135,10 +149,13 @@ installBootloader(){
 rm -rf $MNT_BOOT/*
 rsync -avc $BOOTLOADER/* $MNT_BOOT
 rsync -avc /boot/script.bin /boot/uEnv.txt /boot/uImage* $MNT_ROOT/boot/
+sed -e 's|root=/dev/mmcblk0p1|root='$NAND_ROOT_DEVICE'|g' -i $MNT_ROOT/boot/uEnv.txt
 }
 
 installRootfs(){
+set +e
 rsync -avc --exclude-from=$EXCLUDE_FILE_LIST / $MNT_ROOT
+set -e
 echoBlue "sync disk... please wait"
 sync
 }
@@ -191,9 +208,6 @@ fi
 
 set -e
 
-### determine partition table
-CUBIAN_PART="${CWD}/${DEVICE_TYPE}/cubian_nand.gz"
-
 ### determine u-boot.bin on a20
 # use 0f35 for kernel 3.3.0
 # use 10bb for kernel 3.4.43
@@ -228,24 +242,39 @@ fi
 
 if nandPartitionOK;then
     umountNand
-    echoBlue "continue to install on NAND"   
+    echoBlue "Now continue to install on NAND"   
+    echoBlue "Formating NAND devices"   
     mkFS
-    echoBlue "mount NAND partitions"   
+    echoBlue "Mount NAND partitions"   
     mountDevice
-    echoBlue "install bootloader"
+    echoBlue "Install and configure bootloader"
     installBootloader
-    echoBlue "install rootfs"
+    echoBlue "Transferring rootfs, please be patient"
+	if ! $TESTING;then
     installRootfs
     patchRootfs
+	fi
     umountNand
+	rm -f $FLAG
     echoGreen "*** Success! remember to REMOVE your SD card from board ***"
     if promptyn "shutdown now?";then
         shutdown -h now
     fi
 else
+    echo "
+                                                 
+     #    #   ##   #####  #    # # #    #  ####  
+     #    #  #  #  #    # ##   # # ##   # #    # 
+     #    # #    # #    # # #  # # # #  # #      
+     # ## # ###### #####  #  # # # #  # # #  ### 
+     ##  ## #    # #   #  #   ## # #   ## #    # 
+     #    # #    # #    # #    # # #    #  ####  
+
+    "
     if promptyn "This operation will completely destory your data on $NAND_DEVICE, Are you sure to continue?[y/n]"; then
         umountNand
         formatNand   
+		touch $FLAG
         echo ""
 		echoRed "*** Reboot is needed! Please re-run cubian-nandinstall after system is up ***"
         echo ""
