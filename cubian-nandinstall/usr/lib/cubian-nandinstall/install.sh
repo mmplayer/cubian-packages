@@ -28,17 +28,14 @@ fi
 
 CWD="/usr/lib/cubian-nandinstall"
 
-FLAG=".reboot-nand-install.pid"
 NANDPART="${CWD}/nand-part"
 
 MMC_DEVICE="/dev/mmcblk0"
 NAND_DEVICE="/dev/nand"
 NANDA_DEVICE="/dev/nanda"
 NANDB_DEVICE="/dev/nandb"
-NANDC_DEVICE="/dev/nandc"
 NAND1_DEVICE="/dev/nand1"
 NAND2_DEVICE="/dev/nand2"
-NAND3_DEVICE="/dev/nand3"
 
 DEVICE_A10="a10"
 DEVICE_A20="a20"
@@ -62,7 +59,6 @@ ERR_DETECT_DEVICE="error: failed to detect your device"
 
 NAND_BOOT_DEVICE=
 NAND_ROOT_DEVICE=
-NAND_MAGIC_DEVICE=
 
 DEVICE_TYPE=
 MACH_ID=
@@ -108,29 +104,42 @@ done
 
 formatNand(){
 if [[ "$DEVICE_TYPE" = "${DEVICE_A20}" ]];then
-(echo y;) | nand-part -f a20 /dev/nand 32768 'bootloader 2048' 'magic 512' 'linux 0'
+(echo y;) | nand-part -f a20 $NAND_DEVICE 32768 'bootloader 2048' 'linux 0' >> /dev/null
 else
-(echo y;) | nand-part -f a10 /dev/nand 16 'bootloader 2048' 'linux 0'
+(echo y;) | nand-part -f a10 $NAND_DEVICE 16 'bootloader 2048' 'linux 0' >> /dev/null
 fi
 }
 
 nandPartitionOK(){
-if [[ -f $FLAG ]];then
-	return 0
+local partinfo=
+local partcount=
+local partbad=
+local partcount=
+if [[ "$DEVICE_TYPE" = "${DEVICE_A20}" ]];then
+        partinfo=$(nand-part -f a20 $NAND_DEVICE)
 else
-	return 1
+        partinfo=$(nand-part -f a10 $NAND_DEVICE)
 fi
+printf "$partinfo" | grep "all partition tables are bad" >> /dev/null
+if [ $? -eq 0 ];then
+  return 1
+fi
+
+partcount=$(printf "$partinfo" | grep "partitions" | sed 's/[^0-9]//g')
+
+if [ "$partcount" != "2" ];then
+  return 1
+fi
+
+return 0
 }
 
 mkFS(){
-mkfs.vfat $NAND_BOOT_DEVICE
-mkfs.ext4 $NAND_ROOT_DEVICE
-tune2fs -o journal_data_writeback $NAND_ROOT_DEVICE
-tune2fs -O ^has_journal $NAND_ROOT_DEVICE
+mkfs.vfat $NAND_BOOT_DEVICE >> /dev/null
+mkfs.ext4 $NAND_ROOT_DEVICE >> /dev/null
+tune2fs -o journal_data_writeback $NAND_ROOT_DEVICE >> /dev/null
+tune2fs -O ^has_journal $NAND_ROOT_DEVICE >> /dev/null
 e2fsck -f $NAND_ROOT_DEVICE
-if [[ -n "$NAND_MAGIC_DEVICE" ]];then
-	echo -e 'ANDROID!\0\0\0\0\0\0\0\0\c' > $NAND_MAGIC_DEVICE
-fi
 }
 
 mountDevice(){
@@ -150,6 +159,9 @@ rm -rf $MNT_BOOT/*
 rsync -avc $BOOTLOADER/* $MNT_BOOT
 rsync -avc /boot/script.bin /boot/uEnv.txt /boot/uImage* $MNT_ROOT/boot/
 sed -e 's|root=/dev/mmcblk0p1|root='$NAND_ROOT_DEVICE'|g' -i $MNT_ROOT/boot/uEnv.txt
+if [[ "$DEVICE_TYPE" = "${DEVICE_A20}" ]];then
+	echo "machid=${MACH_ID}" >> $MNT_ROOT/boot/uEnv.txt
+fi
 }
 
 installRootfs(){
@@ -208,16 +220,6 @@ fi
 
 set -e
 
-### determine u-boot.bin on a20
-# use 0f35 for kernel 3.3.0
-# use 10bb for kernel 3.4.43
-# copy correct u-boot.bin
-if [[ "$DEVICE_TYPE" = "${DEVICE_A20}" ]];then
-	rm -f ${CWD}/${DEVICE_TYPE}/bootloader/linux/u-boot*.bin
-	cp -f "${CWD}/${DEVICE_TYPE}/u-boot-${MACH_ID}.bin" \
-		"${CWD}/${DEVICE_TYPE}/bootloader/linux/u-boot.bin"
-fi
-
 ### The bootloader is ready now
 BOOTLOADER="${CWD}/${DEVICE_TYPE}/bootloader"
 
@@ -231,55 +233,51 @@ fi
 if [[ "$DEVICE_TYPE" = "$DEVICE_A10" ]];then
 	NAND_ROOT_DEVICE="$NANDB_DEVICE"
 elif [[ "$DEVICE_TYPE" = "${DEVICE_A20}" ]];then
-	if [[ -b "$NANDC_DEVICE" ]];then
-		NAND_ROOT_DEVICE="$NANDC_DEVICE"
-		NAND_MAGIC_DEVICE="$NANDB_DEVICE"
-	elif [[ -b "$NAND3_DEVICE" ]];then
-		NAND_ROOT_DEVICE="$NAND3_DEVICE"
-		NAND_MAGIC_DEVICE="$NAND2_DEVICE"
+	if [[ -b "$NANDB_DEVICE" ]];then
+		NAND_ROOT_DEVICE="$NANDB_DEVICE"
+	elif [[ -b "$NAND2_DEVICE" ]];then
+		NAND_ROOT_DEVICE="$NAND2_DEVICE"
 	fi
 fi
 
-if nandPartitionOK;then
-    umountNand
-    echoBlue "Now continue to install on NAND"   
-    echoBlue "Formating NAND devices"   
-    mkFS
-    echoBlue "Mount NAND partitions"   
-    mountDevice
-    echoBlue "Install and configure bootloader"
-    installBootloader
-    echoBlue "Transferring rootfs, please be patient"
-	if ! $TESTING;then
-    installRootfs
-    patchRootfs
-	fi
-    umountNand
-	rm -f $FLAG
-    echoGreen "*** Success! remember to REMOVE your SD card from board ***"
-    if promptyn "shutdown now?";then
-        shutdown -h now
-    fi
-else
-    echo "
-                                                 
-     #    #   ##   #####  #    # # #    #  ####  
-     #    #  #  #  #    # ##   # # ##   # #    # 
-     #    # #    # #    # # #  # # # #  # #      
-     # ## # ###### #####  #  # # # #  # # #  ### 
-     ##  ## #    # #   #  #   ## # #   ## #    # 
-     #    # #    # #    # #    # # #    #  ####  
+echo "
+                                             
+ #    #   ##   #####  #    # # #    #  ####  
+ #    #  #  #  #    # ##   # # ##   # #    # 
+ #    # #    # #    # # #  # # # #  # #      
+ # ## # ###### #####  #  # # # #  # # #  ### 
+ ##  ## #    # #   #  #   ## # #   ## #    # 
+ #    # #    # #    # #    # # #    #  ####  
 
-    "
-    if promptyn "This operation will completely destory your data on $NAND_DEVICE, Are you sure to continue?[y/n]"; then
-        umountNand
-        formatNand   
-		touch $FLAG
-        echo ""
-		echoRed "*** Reboot is needed! Please re-run cubian-nandinstall after system is up ***"
-        echo ""
-        if promptyn "reboot now?";then
-            shutdown -r now
-        fi
-    fi
+"
+if promptyn "Your data on $NAND_DEVICE will lost, Are you sure to continue?[y/n]"; then
+    umountNand
+	echoBlue "Re-partitioning NAND device"   
+    formatNand 
+	echoBlue "Check partition table"   
+	if nandPartitionOK;then
+	    echoBlue "Formating NAND devices"   
+	    mkFS
+	    echoBlue "Mount NAND partitions"   
+	    mountDevice
+	    echoBlue "Install and configure bootloader"
+	    installBootloader
+	    echoBlue "Transferring rootfs, please be patient"
+		if ! $TESTING;then
+	    	installRootfs
+	    	patchRootfs
+		fi
+	    umountNand
+    	echo ""
+	    	echoGreen "*** Success! remember to REMOVE your SD card from board ***"
+    	echo ""
+	    if promptyn "shutdown now?";then
+	        shutdown -h now
+	    fi
+	else
+    	echo ""
+		echoRed "*** Re-partition NAND device ${NAND_DEVICE} failed, Partition table has damaged ***"
+    	echo ""
+		echoYellow "To fix the partition table, You need to use livesuit restore a factory image"
+	fi
 fi
