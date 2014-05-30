@@ -95,7 +95,6 @@ sync
 for n in ${NAND_DEVICE}*;do
     if [ "${NAND_DEVICE}" != "$n" ];then
         if mount|grep ${n};then
-            echoBlue "umounting ${n}"
             umount -l $n
         fi
     fi
@@ -137,6 +136,9 @@ return 0
 mkFS(){
 mkfs.vfat $NAND_BOOT_DEVICE >> /dev/null
 mkfs.ext4 $NAND_ROOT_DEVICE >> /dev/null
+}
+
+disableJournal(){
 tune2fs -o journal_data_writeback $NAND_ROOT_DEVICE >> /dev/null
 tune2fs -O ^has_journal $NAND_ROOT_DEVICE >> /dev/null
 e2fsck -f $NAND_ROOT_DEVICE
@@ -260,14 +262,18 @@ if promptyn "Your data on $NAND_DEVICE will lost, Are you sure to continue?[y/n]
 	    mkFS
 	    echoBlue "Mount NAND partitions"   
 	    mountDevice
+    	    umountNand
+	    mountDevice
 	    echoBlue "Install and configure bootloader"
 	    installBootloader
 	    echoBlue "Transferring rootfs, please be patient"
-		if ! $TESTING;then
+	    if ! $TESTING;then
 	    	installRootfs
 	    	patchRootfs
-		fi
+	    fi
 	    umountNand
+	    echoBlue "Optimize NAND performance"
+            disableJournal
     	echo ""
 	    	echoGreen "*** Success! remember to REMOVE your SD card from board ***"
     	echo ""
