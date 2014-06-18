@@ -26,7 +26,6 @@ kernel/drivers/misc/pwm-sunxi.ko
 kernel/drivers/mfd/mfd-core.ko
 kernel/drivers/mfd/wl1273-core.ko
 kernel/drivers/scsi/scsi_wait_scan.ko
-kernel/drivers/spi/spi_sunxi.ko
 kernel/drivers/net/wireless/rtl818x/rtl8187/rtl8187.ko
 kernel/drivers/net/wireless/rtlwifi/rtlwifi.ko
 kernel/drivers/net/wireless/rtlwifi/rtl8192c/rtl8192c-common.ko
@@ -473,6 +472,8 @@ kernel/drivers/pps/clients/pps-ktimer.ko
 kernel/drivers/pps/clients/pps-ldisc.ko
 kernel/drivers/pps/clients/pps-gpio.ko
 kernel/drivers/pps/pps_core.ko
+kernel/drivers/hwmon/hwmon.ko
+kernel/drivers/hwmon/mma7660.ko
 kernel/sound/core/oss/snd-mixer-oss.ko
 kernel/sound/core/oss/snd-pcm-oss.ko
 kernel/sound/core/snd-hwdep.ko

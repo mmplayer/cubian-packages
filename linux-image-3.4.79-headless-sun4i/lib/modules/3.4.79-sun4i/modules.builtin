@@ -290,8 +290,8 @@ kernel/drivers/media/video/ir-kbd-i2c.ko
 kernel/drivers/mmc/card/mmc_block.ko
 kernel/drivers/mmc/core/mmc_core.ko
 kernel/drivers/mmc/host/ushc.ko
+kernel/drivers/mmc/host/sunxi-mci.ko
 kernel/drivers/mmc/mmc-pm/mmc_power.ko
-kernel/drivers/mmc/sunxi-host/mmc_host.ko
 kernel/drivers/net/mii.ko
 kernel/drivers/net/ethernet/allwinner/sunxi_emac.ko
 kernel/drivers/net/phy/libphy.ko
@@ -300,6 +300,7 @@ kernel/drivers/rtc/rtc-sun4i.ko
 kernel/drivers/scsi/scsi_mod.ko
 kernel/drivers/scsi/sd_mod.ko
 kernel/drivers/scsi/sr_mod.ko
+kernel/drivers/spi/spi_sunxi.ko
 kernel/drivers/staging/android/logger.ko
 kernel/drivers/tty/serial/serial_core.ko
 kernel/drivers/tty/serial/8250/8250.ko
