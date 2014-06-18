@@ -1,0 +1,27 @@
+Package: linux-source-3.4.79-sun7i
+Version: 3.4.79
+Architecture: all
+Maintainer: cubieplayer <playcubie@gmail.com>
+Installed-Size: 113358
+Depends: binutils, bzip2, file, p7zip
+Recommends: libc6-dev | libc-dev, gcc | c-compiler, make (>= 3.80-10), po-debconf, gettext, binutils (>= 2.12), util-linux (>= 2.10o), module-init-tools (>= 0.9.10), debianutils (>= 2.30)
+Suggests: libncurses-dev, kernel-package, xmlto, libdb3-dev, docbook-utils, e2fsprogs (>= 1.29), linux-initramfs-tool
+Provides: linux-source, linux-source-3.4
+Section: devel
+Priority: optional
+Description: Linux kernel source for version 3.4.79-sun7i
+ This package provides the source code for the Linux kernel, specifically,
+ version 3.4.79-sun7i.
+ .
+ You may configure the kernel to your setup by typing "make config"
+ and following instructions, but you could get ncursesX.X-dev and try
+ "make menuconfig" for a jazzier, and easier to use interface. There
+ are options to use QT or GNOME based configuration interfaces, but they
+ need additional packages to be installed. Also, please read the detailed
+ documentation in the file README.headers.gz in the documentation directory
+ /usr/share/doc/linux-source-3.4.79-sun7i/.
+ .
+ If you wish to use this package to create a custom Linux kernel, then
+ it is suggested that you investigate the package kernel-package,
+ which has been designed to ease the task of creating kernel image
+ packages.
