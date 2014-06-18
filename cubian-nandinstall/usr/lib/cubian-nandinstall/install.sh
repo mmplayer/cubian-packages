@@ -7,9 +7,10 @@
 #  SD-card to NAND_DEVICE automatically. Supports the following
 #  Distributions.
 #
-#  Cubian for cubieboad1 A10 kernel 3.4.43
+#  Cubian for cubieboad1 A10 kernel greater than 3.4.43
 #  Cubian for cubieboad2 A20 kernel 3.3.0
-#  Cubian for cubieboad2 A20 kernel 3.4.43
+#  Cubian for cubieboad2 A20(Rev A,B) kernel greater than 3.4.43
+#  Cubian for cubietruck A20(Rev A,B) kernel greater than 3.4.43
 # 
 #  U-Boot source:
 #
@@ -103,7 +104,7 @@ done
 
 formatNand(){
 if [[ "$DEVICE_TYPE" = "${DEVICE_A20}" ]];then
-(echo y;) | nand-part -f a20 $NAND_DEVICE 32768 'bootloader 2048' 'linux 0' >> /dev/null
+(echo y;) | nand-part -f a20 $NAND_DEVICE 128 'bootloader 2048' 'linux 0'
 else
 (echo y;) | nand-part -f a10 $NAND_DEVICE 16 'bootloader 2048' 'linux 0' >> /dev/null
 fi
@@ -129,6 +130,14 @@ partcount=$(printf "$partinfo" | grep "partitions" | sed 's/[^0-9]//g')
 if [ "$partcount" != "2" ];then
   return 1
 fi
+
+if ! test -b $NAND_BOOT_DEVICE;then
+  return 1
+fi 
+
+if ! test -b $NAND_ROOT_DEVICE;then
+  return 1
+fi 
 
 return 0
 }
@@ -284,6 +293,6 @@ if promptyn "Your data on $NAND_DEVICE will lost, Are you sure to continue?[y/n]
     	echo ""
 		echoRed "*** Re-partition NAND device ${NAND_DEVICE} failed, Partition table has damaged ***"
     	echo ""
-		echoYellow "To fix the partition table, You need to use livesuit restore a factory image"
+		echoYellow "To fix the partition table, You can try to run cubian-nandinstall again. If the error still there, then you need to use livesuit restore a factory image first, then run cubian-nandinstall."
 	fi
 fi
