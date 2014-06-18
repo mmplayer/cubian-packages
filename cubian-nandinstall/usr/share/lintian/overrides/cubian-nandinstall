@@ -1,0 +1,4 @@
+cubian-nandinstall: unstripped-binary-or-object
+cubian-nandinstall: statically-linked-binary
+cubian-nandinstall: missing-dependency-on-libc
+
