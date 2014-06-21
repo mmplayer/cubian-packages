@@ -30,7 +30,7 @@ my $kernel_pkg_version = "12.036+nmu2";
 exit 0 unless ($ARGV[0] && $ARGV[0] =~ /configure/);
 
 my $architecture;
-chomp($architecture = `dpkg --print-installation-architecture`);
+chomp($architecture = `dpkg --print-architecture`);
 $architecture = "ppc" if $architecture eq "powerpc";
 $architecture = "parisc" if $architecture eq "hppa";
 $architecture = "mips" if $architecture eq "mipsel";
