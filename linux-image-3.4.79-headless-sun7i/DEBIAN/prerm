@@ -87,7 +87,7 @@ $ENV{KERNEL_ARCH}=$kernel_arch if $kernel_arch;
 #check to see if we are trying to remove a running kernel
 # if so we abort right now.
 chop($running=`uname -r`);
-if ($running eq $version) {
+if (0 && $running eq $version) {
   my $question = "${package_name}/prerm/removing-running-kernel-$version";
 
   ($ret,$seen) = fset ("$question", 'seen', 'false');
