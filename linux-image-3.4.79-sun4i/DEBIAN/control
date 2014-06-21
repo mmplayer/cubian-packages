@@ -1,6 +1,6 @@
 Package: linux-image-3.4.79-sun4i
 Source: linux-source-3.4.79-sun4i
-Version: 3.4.79-2
+Version: 3.4.79-2cubian
 Architecture: armhf
 Maintainer: cubieplayer <sophiasmth@gmail.com>
 Pre-Depends: debconf (>= 0.2.17) | debconf-2.0
