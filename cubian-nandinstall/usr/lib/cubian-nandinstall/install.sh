@@ -285,6 +285,7 @@ if promptyn "Your data on $NAND_DEVICE will lost, Are you sure to continue?[y/n]
             disableJournal
     	echo ""
 	    	echoGreen "*** Success! remember to REMOVE your SD card from board ***"
+	    	echoGreen "*** Read http://tinyurl.com/qyee5k2, if the board won't boot from NAND ***"
     	echo ""
 	    if promptyn "shutdown now?";then
 	        shutdown -h now
