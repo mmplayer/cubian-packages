@@ -177,7 +177,7 @@ sync
 patchRootfs(){
 cat > ${MNT_ROOT}/etc/fstab <<END
 #<file system>	<mount point>	<type>	<options>	<dump>	<pass>
-$NAND_ROOT_DEVICE	/		ext4	defaults	0	1
+$NAND_ROOT_DEVICE	/		ext4	defaults,noatime	0	1
 END
 }
 
