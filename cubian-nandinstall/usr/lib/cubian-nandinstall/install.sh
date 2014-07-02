@@ -104,9 +104,9 @@ done
 
 formatNand(){
 if [[ "$DEVICE_TYPE" = "${DEVICE_A20}" ]];then
-(echo y;) | $NAND-PART -f a20 $NAND_DEVICE 128 'bootloader 2048' 'linux 0'
+(echo y;) | $NANDPART -f a20 $NAND_DEVICE 128 'bootloader 2048' 'linux 0'
 else
-(echo y;) | $NAND-PART -f a10 $NAND_DEVICE 16 'bootloader 2048' 'linux 0' >> /dev/null
+(echo y;) | $NANDPART -f a10 $NAND_DEVICE 16 'bootloader 2048' 'linux 0' >> /dev/null
 fi
 }
 
@@ -116,9 +116,9 @@ local partcount=
 local partbad=
 local partcount=
 if [[ "$DEVICE_TYPE" = "${DEVICE_A20}" ]];then
-        partinfo=$($NAND-PART -f a20 $NAND_DEVICE)
+        partinfo=$($NANDPART -f a20 $NAND_DEVICE)
 else
-        partinfo=$($NAND-PART -f a10 $NAND_DEVICE)
+        partinfo=$($NANDPART -f a10 $NAND_DEVICE)
 fi
 printf "$partinfo" | grep "all partition tables are bad" >> /dev/null
 if [ $? -eq 0 ];then
