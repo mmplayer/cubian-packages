@@ -3,7 +3,7 @@ Version: 1.0-1
 Section: misc
 Priority: optional
 Architecture: armhf
-Depends: libc6 (>= 2.13-28), ruby (>= 1.9.1), isomd5sum, coreutils (>= 8.13), util-linux (>= 2.20)
+Depends: libc6 (>= 2.13-28), ruby (>= 1.9.1), coreutils (>= 8.13), util-linux (>= 2.20)
 Maintainer: cubieplayer <playcubie@gmail.com>
 Description: Collection of programs to put heavy load on CPU
  CPUburn is a collection of programs to put heavy stress on CPU.
