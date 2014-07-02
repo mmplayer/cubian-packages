@@ -1,0 +1,3 @@
+#!/bin/sh
+CWD=$(cd "$(dirname "$0")"; pwd)
+PATH=/usr/lib/cpuburn-sunxi/cpuburn-arm/libjpeg-turbo:$PATH /usr/lib/cpuburn-sunxi/cpuburn-arm/cpufreq-ljt-stress-test

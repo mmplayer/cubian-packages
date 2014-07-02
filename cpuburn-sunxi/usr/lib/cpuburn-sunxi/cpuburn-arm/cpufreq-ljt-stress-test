@@ -1,0 +1,214 @@
+#!/usr/bin/env ruby
+#
+# Copyright © 2014 Siarhei Siamashka <siarhei.siamashka@gmail.com>
+#
+# Permission is hereby granted, free of charge, to any person obtaining a
+# copy of this software and associated documentation files (the "Software"),
+# to deal in the Software without restriction, including without limitation
+# the rights to use, copy, modify, merge, publish, distribute, sublicense,
+# and/or sell copies of the Software, and to permit persons to whom the
+# Software is furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice (including the next
+# paragraph) shall be included in all copies or substantial portions of the
+# Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+# THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+# DEALINGS IN THE SOFTWARE.
+
+raise "Please upgrade ruby to at least version 1.9" if RUBY_VERSION =~ /^1\.8/
+
+require 'shellwords'
+
+# Test the availability of the required tools
+
+def tool_exists(tool_name)
+    `which #{tool_name} > /dev/null 2>&1`
+    if $?.to_i != 0 then
+        printf("Error: the required '%s' executable is not found in PATH\n", tool_name)
+        return false
+    else
+        return true
+    end
+end
+
+exit(1) if not tool_exists("md5sum") or
+           not tool_exists("nproc") or
+           not tool_exists("taskset")
+
+$cjpeg = "cjpeg"
+$djpeg = "djpeg"
+
+def download_and_compile_libjpeg_turbo()
+    exit(1) if not tool_exists("wget") or
+               not tool_exists("tar") or
+               not tool_exists("gcc")
+
+    shellescaped_dirname = Shellwords.escape(File.dirname(__FILE__))
+    ljtname = File.join(File.dirname(__FILE__), "libjpeg-turbo-1.3.1")
+    shellescaped_ljtname = Shellwords.escape(ljtname)
+
+    if File.exists?(File.join(ljtname, "djpeg")) then
+        $cjpeg = Shellwords.escape(File.join(ljtname, "cjpeg"))
+        $djpeg = Shellwords.escape(File.join(ljtname, "djpeg"))
+        return
+    end
+
+    if not `md5sum #{shellescaped_ljtname}.tar.gz 2>&1` =~ /2c3a68129dac443a72815ff5bb374b05/ then
+        url = "http://downloads.sourceforge.net/project/libjpeg-turbo/1.3.1/libjpeg-turbo-1.3.1.tar.gz"
+        printf("Downloading libjpeg-turbo-1.3.1.tar.gz ...")
+        `wget -c #{url} -O #{shellescaped_ljtname}.tar.gz 2>&1`
+        if $?.to_i != 0 then
+            printf(" failed\n")
+            exit(1)
+        end
+        printf(" done\n")
+    end
+    if not `md5sum #{shellescaped_ljtname}.tar.gz 2>&1` =~ /2c3a68129dac443a72815ff5bb374b05/ then
+        printf("MD5 check failed for the downloaded libjpeg-turbo-1.3.1.tar.gz\n")
+        exit(1)
+    end
+
+    printf("Extracting libjpeg-turbo-1.3.1.tar.gz ...")
+    `tar -xzf #{shellescaped_ljtname}.tar.gz -C #{shellescaped_dirname}`
+    if $?.to_i != 0 then
+        printf(" failed\n")
+        exit(1)
+    end
+    printf(" done\n")
+
+    Dir.chdir(ljtname) {
+        printf("Compiling libjpeg-turbo, please be patient ...")
+        compilation_log = `./configure --disable-shared && make -j2 2>&1`
+        if $?.to_i != 0 then
+            printf(" failed\n%s\n", compilation_log)
+            exit(1)
+        end
+        printf(" done\n")
+    }
+
+    $cjpeg = Shellwords.escape(File.join(ljtname, "cjpeg"))
+    $djpeg = Shellwords.escape(File.join(ljtname, "djpeg"))
+end
+
+# Check if we have the right cjpeg and djpeg
+if not `#{$djpeg} -v </dev/null 2>&1` =~ /libjpeg\-turbo/ or
+   not `#{$cjpeg} -v </dev/null 2>&1` =~ /libjpeg\-turbo/
+then
+    printf("The cjpeg and djpeg tools from libjpeg-turbo are not found.\n")
+    printf("Trying to download and compile them.\n")
+    download_and_compile_libjpeg_turbo()
+end
+
+###############################################################################
+
+def create_random_jpg(filename, width, height)
+    IO.popen(sprintf("#{$cjpeg} -q 95 > %s", Shellwords.escape(filename)), "wb") {|fh|
+         fh.printf("P3\n%d %d\n255\n", width, height)
+         fh.write(Random.new(0).bytes(3 * width * height).bytes.to_a.map {|x|
+                  x.to_s }.join(" "))
+    }
+end
+
+def read_file(filename)
+    return if not File.exists?(filename)
+    fh = File.open(filename, "rb")
+    data = fh.read
+    fh.close
+    return data
+end
+
+def write_file(filename, data)
+    begin
+        fh = File.open(filename, "wb")
+        fh.write(data)
+        fh.close
+    rescue
+        return false
+    end
+    return true
+end
+
+def set_userspace_governor(core)
+    write_file("/sys/devices/system/cpu/cpu#{core}/cpufreq/scaling_governor", "userspace")
+    governor = read_file("/sys/devices/system/cpu/cpu#{core}/cpufreq/scaling_governor")
+    return false if not governor
+    return governor.strip == "userspace"
+end
+
+def set_freq(core, freq)
+    write_file("/sys/devices/system/cpu/cpu#{core}/cpufreq/scaling_setspeed", freq.to_s)
+    cur_freq = read_file("/sys/devices/system/cpu/cpu#{core}/cpufreq/scaling_cur_freq")
+    return false if not cur_freq
+    return cur_freq.to_i == freq
+end
+
+def get_freq_list(core)
+    freq_list = read_file("/sys/devices/system/cpu/cpu#{core}/cpufreq/scaling_available_frequencies")
+    if not freq_list then
+        freq_list = read_file("/sys/devices/system/cpu/cpu#{core}/cpufreq/stats/time_in_state")
+        return [] if not freq_list
+        return freq_list.split(/\s+/).each_slice(2).map {|x| x[0].to_i}
+    end
+    return freq_list.split(" ").map {|x| x.to_i}
+end
+
+jpgname = File.join("/tmp", "whitenoise-1920x1080.jpg")
+shellescaped_jpgname = Shellwords.escape(jpgname)
+
+printf("Creating '%s' ... it may take a while", jpgname)
+create_random_jpg(jpgname, 1920, 1080)
+
+number_of_cpu_cores = `nproc`.to_i
+
+test_failed = false
+
+min_freq = 0
+max_freq = 10000
+
+printf("CPU stress test, which is doing JPEG decoding by libjpeg-turbo\n")
+printf("at different cpufreq operating points.\n")
+
+if ARGV[0] and ARGV[1] then
+    min_freq = [ARGV[0].to_i, ARGV[1].to_i].min
+    max_freq = [ARGV[0].to_i, ARGV[1].to_i].max
+    printf("\nTesting CPU clock frequencies between %d MHz and %d MHz\n",
+           min_freq, max_freq)
+end
+
+0.upto(number_of_cpu_cores - 1) {|core|
+    printf("\nTesting CPU %d\n", core)
+    if not set_userspace_governor(core) then
+        raise "Can't set the userspace cpufreq governor"
+    end
+
+    freq_list = get_freq_list(core)
+    freq_list.sort.reverse.each {|freq|
+        printf("%5d MHz ", freq / 1000)
+        if freq < min_freq * 1000 or freq > max_freq * 1000 or not set_freq(core, freq)
+        then
+            printf("SKIPPED\n")
+            next
+        end
+        subtest_failed = false
+        expected_result = `taskset -c #{core} #{$djpeg} #{shellescaped_jpgname} | md5sum`
+        1.upto(60) {
+            printf(".")
+            STDOUT.flush
+            if `taskset -c #{core} #{$djpeg} #{shellescaped_jpgname} | md5sum` != expected_result
+            then
+                subtest_failed = true
+                break
+            end
+        }
+        test_failed = true if subtest_failed
+        printf(subtest_failed ? " FAILED\n" : " OK\n")
+    }
+}
+
+printf("\nOverall result : %s\n", (test_failed ? "FAILED" : "PASSED"))

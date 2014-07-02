@@ -1,0 +1,5 @@
+#!/bin/sh
+echo "This program tries to stress the processor, attempting to generate as much heat as possible. Improperly cooled or otherwise flawed hardware may potentially overheat and fail. Use at your own risk!"
+echo ""
+echo "cpuburn is running... CTRL + C to STOP"
+/usr/lib/cpuburn-sunxi/cpuburn-arm/cpuburn-a7
