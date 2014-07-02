@@ -21,8 +21,8 @@ displaytime() {
   [[ $D > 0 ]] && printf '%d days ' $D
   [[ $H > 0 ]] && printf '%d hours ' $H
   [[ $M > 0 ]] && printf '%d minutes ' $M
-  [[ $D > 0 || $H > 0 || $M > 0 ]] && printf 'and '
-  printf 'time used: %d seconds\n' $S
+  [[ ($D > 0 || $H > 0 || $M > 0) && $S > 0 ]]  && printf 'and '
+  printf '%d seconds\n' $S
 }
 
 control_c(){
@@ -35,10 +35,23 @@ control_c(){
     exit 0
 }
 
+get_temp(){
+local temp=$(cat /sys/devices/platform/sunxi-i2c.0/i2c-0/0-0034/temp1_input)
+temp=$(echo "scale=1;${temp}/1000" | bc)
+cel=$(awk 'BEGIN { print "\302\260C"; }')
+echo ${temp}${cel}
+}
+
 trap control_c SIGINT
 
+count=1
 while true;
 do
-    printf "."
+    if [ $((count%5)) = "0" ];then
+        printf "%s" $(get_temp)
+    else
+        printf "."
+    fi
+    count=$((count+1))
     sleep 1 
 done
