@@ -454,6 +454,7 @@ kernel/drivers/media/dvb/siano/smsmdtv.ko
 kernel/drivers/media/dvb/siano/smsdvb.ko
 kernel/drivers/media/dvb/siano/smsusb.ko
 kernel/drivers/media/dvb/siano/smssdio.ko
+kernel/drivers/hwmon/mma7660.ko
 kernel/drivers/watchdog/pcwd_usb.ko
 kernel/drivers/watchdog/sp805_wdt.ko
 kernel/drivers/watchdog/dw_wdt.ko
@@ -472,8 +473,6 @@ kernel/drivers/pps/clients/pps-ktimer.ko
 kernel/drivers/pps/clients/pps-ldisc.ko
 kernel/drivers/pps/clients/pps-gpio.ko
 kernel/drivers/pps/pps_core.ko
-kernel/drivers/hwmon/hwmon.ko
-kernel/drivers/hwmon/mma7660.ko
 kernel/sound/core/oss/snd-mixer-oss.ko
 kernel/sound/core/oss/snd-pcm-oss.ko
 kernel/sound/core/snd-hwdep.ko
