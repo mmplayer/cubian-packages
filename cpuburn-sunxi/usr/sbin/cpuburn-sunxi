@@ -1,0 +1,44 @@
+#!/bin/bash
+echo "This program tries to stress the processor, attempting to generate as much heat as possible. Improperly cooled or otherwise flawed hardware may potentially overheat and fail. Use at your own risk!"
+echo ""
+start_timestamp=$(date +"%s")
+start_timestring=$(date --date @$start_timestamp)
+echo "cpuburn is started at `date`"
+echo ""
+echo "Press CTRL + C to STOP"
+
+/usr/lib/cpuburn-sunxi/cpuburn-arm/cpuburn-a7 &
+
+#echo "process pid $!"
+#echo "bash pid $$"
+
+displaytime() {
+  local T=$1
+  local D=$((T/60/60/24))
+  local H=$((T/60/60%24))
+  local M=$((T/60%60))
+  local S=$((T%60))
+  [[ $D > 0 ]] && printf '%d days ' $D
+  [[ $H > 0 ]] && printf '%d hours ' $H
+  [[ $M > 0 ]] && printf '%d minutes ' $M
+  [[ $D > 0 || $H > 0 || $M > 0 ]] && printf 'and '
+  printf 'time used: %d seconds\n' $S
+}
+
+control_c(){
+    echo ""
+    end_timestamp=$(date +"%s")
+    end_timestring=$(date --date @$end_timestamp)
+    echo "cpuburn is stopped at $end_timestring"
+    echo $(displaytime $(($end_timestamp-$start_timestamp)))
+    pkill cpuburn-a7 &
+    exit 0
+}
+
+trap control_c SIGINT
+
+while true;
+do
+    printf "."
+    sleep 1 
+done
