@@ -1,0 +1,6 @@
+#!/bin/sh -e
+LIB_LD_LINUX=/lib/ld-linux.so.3
+LIB_LD_LINUX_ARMHF=/lib/arm-linux-gnueabihf# ld-linux-armhf.so.3
+if [ ! -f $LIB_LD_LINUX ] && [ -f $LIB_LD_LINUX_ARMHF ];then
+	ln -sf $LIB_LD_LINUX_ARMHF $LIB_LD_LINUX
+fi

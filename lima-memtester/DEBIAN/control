@@ -1,0 +1,16 @@
+Package: lima-memtester
+Version: 1.0-1
+Section: misc
+Priority: optional
+Architecture: armhf
+Maintainer: cubieplayer <playcubie@gmail.com>
+Depends: libc6 (>=2.13-28)
+Description: This is a memory reliability testing tool, 
+ implemented by combining http://limadriver.org/ and
+ http://pyropus.ca/software/memtester/
+ .
+ Licensed under the terms of the GNU General Public License version 2 (only)
+ because the license of memtester applies to this work as a whole.
+ .
+ Original author: https://github.com/ssvb/lima-memtester
+ Compiled by: cubieplayer
