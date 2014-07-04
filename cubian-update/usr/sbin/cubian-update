@@ -2,7 +2,7 @@
 
 set -e
 
-VERSION="1.3.1"
+VERSION="1.3.2"
 
 RAW_ARGS="$@"
 
@@ -71,7 +71,6 @@ OPT_SKIP_KERNEL=false
 OPT_SKIP_MODULES=false
 OPT_SKIP_ROOTFS=false
 OPT_UPDATE_BOOTLOADER=false
-OPT_UPDATE_BOOT_CFG=false
 OPT_UPDATE_BOARD_CFG=false
 
 COLOR_NORMAL=$(echo -e "\033[m")
@@ -118,7 +117,6 @@ Exclusive Options:
 
 Inclusive Options:
      --update-bootloader  Update bootloader(u-boot)
-     --update-boot-cfg    Update boot.scr and uEnv.txt
      --update-board-cfg   Update board config(script.bin)
 EOF
 }
@@ -133,7 +131,6 @@ if ! OPTIONS=$(getopt -o hrvct -l help \
 -l skip-modules \
 -l skip-rootfs \
 -l update-bootloader \
--l update-boot-cfg \
 -l update-board-cfg \
 -- ${RAW_ARGS});then
 	usage
@@ -174,9 +171,6 @@ while [ $# -gt 0 ];do
 			;;
 		--update-bootloader)
 			OPT_UPDATE_BOOTLOADER=true
-			;;
-		--update-boot-cfg)
-			OPT_UPDATE_BOOT_CFG=true
 			;;
 		--update-board-cfg)
 			OPT_UPDATE_BOARD_CFG=true
@@ -508,31 +502,6 @@ while true;do
 	esac
 done
 }
-updateBootCfg(){
-	echoBlue "*** Updating bootloader configuration"
-
-	if [[ -f $BOOT_SCR_UPDATE ]];then
-		local boot_scr_dest="${ROOT_PATH}boot/${NAME_BOOT_SCR}"
-		backup $boot_scr_dest
-		if $OPT_VERBOSE;then
-			debug "Update boot.scr"
-			cp -v $BOOT_SCR_UPDATE $boot_scr_dest
-		else
-			cp $BOOT_SCR_UPDATE $boot_scr_dest
-		fi
-	fi
-
-	if [[ -f $UENV_TXT_UPDATE ]];then
-		local uenv_txt_dest="${ROOT_PATH}boot/${NAME_UENV_TXT}"
-		backup $uenv_txt_dest
-		if $OPT_VERBOSE;then
-			debug "Update uEnv.txt"
-			cp -v $UENV_TXT_UPDATE $uenv_txt_dest
-		else
-			cp $UENV_TXT_UPDATE $uenv_txt_dest
-		fi
-	fi
-}
 
 updateBoardCfg(){
 	echoBlue "*** Updating bootloader configuration(script.bin)"
@@ -624,11 +593,6 @@ updateFirmware(){
 		else
 			echoYellow "warning: bootloader is not updated"
 		fi
-	fi
-
-	if $OPT_UPDATE_BOOT_CFG;then
-		echoBlue "*** As requested, updating bootloader configurations($NAME_BOOT_SCR or $NAME_UENV_TXT)"
-		updateBootCfg
 	fi
 
 	if $OPT_UPDATE_BOARD_CFG;then
@@ -765,7 +729,6 @@ debug "Update Kernel: $(skipOpt2str ${OPT_SKIP_KERNEL})"
 debug "Update Modules: $(skipOpt2str ${OPT_SKIP_MODULES})"
 debug "Update Rootfs: $(skipOpt2str ${OPT_SKIP_ROOTFS})"
 debug "Update Bootloader: $(bool2str ${OPT_UPDATE_BOOTLOADER})"
-debug "Update Boot configuration: $(bool2str ${OPT_UPDATE_BOOT_CFG})"
 debug "Update Board configuration: $(bool2str ${OPT_UPDATE_BOARD_CFG})"
 
 determineBranch
