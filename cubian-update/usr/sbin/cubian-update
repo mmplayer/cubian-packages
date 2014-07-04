@@ -2,7 +2,7 @@
 
 set -e
 
-VERSION="1.2.9"
+VERSION="1.3.1"
 
 RAW_ARGS="$@"
 
@@ -38,6 +38,8 @@ FSTAB="${ROOT_PATH}etc/fstab"
 
 MMC_DEVICE="/dev/mmcblk0"
 NAND_DEVICE="/dev/nand"
+# should be /dev/sda, but it could be sdb,sdc etc,
+SATA_DEVICE="/dev/sd"
 
 NAND1_DEVICE="/dev/nand1"
 NANDA_DEVICE="/dev/nanda"
@@ -81,6 +83,7 @@ COLOR_RED=$(echo -e "\033[31m")
 
 SYS_INSTALL_TYPE_NAND="nand"
 SYS_INSTALL_TYPE_MMC="mmc"
+SYS_INSTALL_TYPE_SATA="sata"
 
 SYS_INSTALL_TYPE=
 
@@ -270,6 +273,10 @@ determineSysInstallType(){
 		cat $FSTAB | awk '{if($2=="/") {print $1}}' | grep -q $NAND_DEVICE && \
 		SYS_INSTALL_TYPE="$SYS_INSTALL_TYPE_NAND"
 	fi
+	if [[ -z $SYS_INSTALL_TYPE ]];then
+		cat $FSTAB | awk '{if($2=="/") {print $1}}' | grep -q $SATA_DEVICE && \
+		SYS_INSTALL_TYPE="$SYS_INSTALL_TYPE_SATA"
+	fi
 	set -e
 }
 
@@ -360,10 +367,17 @@ updateKernel(){
 	echoBlue "*** Updating kernel"
 	if $OPT_VERBOSE;then
 		echo -n "${COLOR_GRAY}"
-		cp -v "${FW_REPO_LOCAL}/boot/uImage" "${ROOT_PATH}boot"
+		# uImage, uImage-3.4.79-sun4i
+		cp -vd "${FW_REPO_LOCAL}/boot/uImage"* "${ROOT_PATH}boot"
+		# config-3.4.79-sun4i
+		cp -vd "${FW_REPO_LOCAL}/boot/config"* "${ROOT_PATH}boot"
+		# System.map-3.4.79-sun4i
+		cp -vd "${FW_REPO_LOCAL}/boot/System"* "${ROOT_PATH}boot"
 		echo -n "${NORMAL}"
 	else
-		cp "${FW_REPO_LOCAL}/boot/uImage" "${ROOT_PATH}boot"
+		cp -d "${FW_REPO_LOCAL}/boot/uImage"* "${ROOT_PATH}boot"
+		cp -d "${FW_REPO_LOCAL}/boot/config"* "${ROOT_PATH}boot"
+		cp -d "${FW_REPO_LOCAL}/boot/System"* "${ROOT_PATH}boot"
 	fi
 }
 
@@ -371,10 +385,10 @@ updateModules(){
 	echoBlue "*** Updating modules"
 	if $OPT_VERBOSE;then
 		echo -n "${COLOR_GRAY}"
-		cp -vR "${FW_REPO_LOCAL}/modules/"* "${FW_MOD_PATH}/"
+		cp -dvR "${FW_REPO_LOCAL}/modules/"* "${FW_MOD_PATH}/"
 		echo -n "${NORMAL}"
 	else
-		cp -R "${FW_REPO_LOCAL}/modules/"* "${FW_MOD_PATH}/"
+		cp -dR "${FW_REPO_LOCAL}/modules/"* "${FW_MOD_PATH}/"
 	fi
 	find "${FW_REPO_LOCAL}/modules" -mindepth 1 -maxdepth 1 -type d | while read DIR; do
 			echoBlue "*** Depmod $(basename "${DIR}")"
@@ -386,10 +400,10 @@ updateFS(){
 	echoBlue "*** Updating fs"
 	if $OPT_VERBOSE;then
 		echo -n "${COLOR_GRAY}"
-		cp -vR "${FW_REPO_LOCAL}/fs/"* "${ROOT_PATH}"
+		cp -dvR "${FW_REPO_LOCAL}/fs/"* "${ROOT_PATH}"
 		echo -n "${NORMAL}"
 	else
-		cp -R "${FW_REPO_LOCAL}/fs/"* "${ROOT_PATH}"
+		cp -dR "${FW_REPO_LOCAL}/fs/"* "${ROOT_PATH}"
 	fi
 }
 
@@ -478,6 +492,22 @@ updateBootLoaderNAND(){
 
 }
 
+updateBootLoaderSATA(){
+echoBlue "*** Updating bootloader on SATA"
+while true;do
+	read -p "${COLOR_YELLOW}Your rootfs is on SATA, where is your bootloader? Please type in mmc or nand.${COLOR_NORMAL}" sata_bootloader_device
+	case $sata_bootloader_device in
+		mmc)
+			updateBootLoaderMMC
+			break;;
+		nand)
+			updateBootLoaderNAND
+			break;;
+		*)
+			echo "$sata_bootloader_device is not valid"
+	esac
+done
+}
 updateBootCfg(){
 	echoBlue "*** Updating bootloader configuration"
 
@@ -582,6 +612,8 @@ updateFirmware(){
 			[[ "$SYS_INSTALL_TYPE" = "$SYS_INSTALL_TYPE_NAND" ]] && \
 			([[ -f $UBOOT_NAND_UPDATE ]] || [[ -f $UENV_TXT_UPDATE ]]);then
 			updateBootLoaderNAND
+		elif [[ "$SYS_INSTALL_TYPE" = "$SYS_INSTALL_TYPE_SATA" ]];then
+			updateBootLoaderSATA
 		elif [[ ! -b $MMC_DEVICE ]] && \
 			[[ "$ROOT_PATH" != "/" ]] && \
 			[[ "$SYS_INSTALL_TYPE" = "$SYS_INSTALL_TYPE_MMC" ]] && \
