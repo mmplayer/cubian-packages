@@ -2,7 +2,7 @@
 
 set -e
 
-VERSION="1.3.2"
+VERSION="1.3.3"
 
 RAW_ARGS="$@"
 
@@ -54,10 +54,8 @@ NAME_UENV_TXT="uEnv.txt"
 NAME_BOOT_SCR="boot.scr"
 NAME_SCRIPT_BIN="script.bin"
 
-UBOOT_MMC_UPDATE="${FW_REPO_LOCAL}/u-boot-mmc.bin"
-UBOOT_MMC_IMG_UPDATE="${FW_REPO_LOCAL}/u-boot-mmc.img"
+UBOOT_MMC_UPDATE="${FW_REPO_LOCAL}/u-boot-sunxi-with-spl-mmc.bin"
 UBOOT_NAND_UPDATE="${FW_REPO_LOCAL}/u-boot-nand.bin"
-SUNXI_SPL_UPDATE="${FW_REPO_LOCAL}/sunxi-spl.bin"
 UENV_TXT_UPDATE="${FW_REPO_LOCAL}/boot/${NAME_UENV_TXT}"
 BOOT_SCR_UPDATE="${FW_REPO_LOCAL}/boot/${NAME_BOOT_SCR}"
 SCRIPT_BIN_UPDATE="${FW_REPO_LOCAL}/boot/${NAME_SCRIPT_BIN}"
@@ -424,25 +422,9 @@ updateBootLoaderMMC(){
 	if [[ -f $UBOOT_MMC_UPDATE ]];then
 		if $OPT_VERBOSE;then
 			debug "Write u-boot to SD-Card"
-			dd if=$UBOOT_MMC_UPDATE of=$MMC_DEVICE bs=1024 seek=32
+			dd if=$UBOOT_MMC_UPDATE of=$MMC_DEVICE bs=1024 seek=8
 		else
-			dd if=$UBOOT_MMC_UPDATE of=$MMC_DEVICE bs=1024 seek=32 > /dev/null 2>&1
-		fi
-	fi
-	if [[ -f $UBOOT_MMC_IMG_UPDATE ]];then
-		if $OPT_VERBOSE;then
-			debug "Write u-boot to SD-Card"
-			dd if=$UBOOT_MMC_IMG_UPDATE of=$MMC_DEVICE bs=1024 seek=40
-		else
-			dd if=$UBOOT_MMC_IMG_UPDATE of=$MMC_DEVICE bs=1024 seek=40 > /dev/null 2>&1
-		fi
-	fi
-	if [[ -f $SUNXI_SPL_UPDATE ]];then
-		if $OPT_VERBOSE;then
-			debug "Write sunxi-spl to SD-Card"
-			dd if=$SUNXI_SPL_UPDATE of=$MMC_DEVICE bs=1024 seek=8
-		else
-			dd if=$SUNXI_SPL_UPDATE of=$MMC_DEVICE bs=1024 seek=8 > /dev/null 2>&1
+			dd if=$UBOOT_MMC_UPDATE of=$MMC_DEVICE bs=1024 seek=8 > /dev/null 2>&1
 		fi
 	fi
 }
@@ -575,7 +557,7 @@ updateFirmware(){
 		echoBlue "*** As requested, updating bootloader(u-boot)"
 		if [[ -b $MMC_DEVICE ]] && \
 			[[ "$SYS_INSTALL_TYPE" = "$SYS_INSTALL_TYPE_MMC" ]] && \
-			([[ -f $UBOOT_MMC_UPDATE ]] || [[ -f $UBOOT_MMC_IMG_UPDATE ]] || [[ -f $SUNXI_SPL_UPDATE ]]);then
+			([[ -f $UBOOT_MMC_UPDATE ]]);then
 			updateBootLoaderMMC
 		elif [[ -b $NAND_DEVICE ]] && \
 			[[ "$SYS_INSTALL_TYPE" = "$SYS_INSTALL_TYPE_NAND" ]] && \
@@ -586,7 +568,7 @@ updateFirmware(){
 		elif [[ ! -b $MMC_DEVICE ]] && \
 			[[ "$ROOT_PATH" != "/" ]] && \
 			[[ "$SYS_INSTALL_TYPE" = "$SYS_INSTALL_TYPE_MMC" ]] && \
-			([[ -f $UBOOT_MMC_UPDATE ]] || [[ -f $UBOOT_MMC_IMG_UPDATE ]] || [[ -f $SUNXI_SPL_UPDATE ]]);then
+			([[ -f $UBOOT_MMC_UPDATE ]]);then
 			# ask user for MMC device
 			acquireMMCDevice
 			updateBootLoaderMMC
