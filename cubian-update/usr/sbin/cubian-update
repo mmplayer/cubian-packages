@@ -2,7 +2,7 @@
 
 set -e
 
-VERSION="1.3.3"
+VERSION="1.3.4"
 
 RAW_ARGS="$@"
 
@@ -357,46 +357,52 @@ setFirmwareRepoUrl(){
 
 updateKernel(){
 	echoBlue "*** Updating kernel"
+	set +e
 	if $OPT_VERBOSE;then
 		echo -n "${COLOR_GRAY}"
 		# uImage, uImage-3.4.79-sun4i
-		cp -vd "${FW_REPO_LOCAL}/boot/uImage"* "${ROOT_PATH}boot"
+		cp -vd "${FW_REPO_LOCAL}/boot/uImage*" "${ROOT_PATH}boot" 2>/dev/null
 		# config-3.4.79-sun4i
-		cp -vd "${FW_REPO_LOCAL}/boot/config"* "${ROOT_PATH}boot"
+		cp -vd "${FW_REPO_LOCAL}/boot/config*" "${ROOT_PATH}boot" 2>/dev/null
 		# System.map-3.4.79-sun4i
-		cp -vd "${FW_REPO_LOCAL}/boot/System"* "${ROOT_PATH}boot"
+		cp -vd "${FW_REPO_LOCAL}/boot/System*" "${ROOT_PATH}boot" 2>/dev/null
 		echo -n "${NORMAL}"
 	else
-		cp -d "${FW_REPO_LOCAL}/boot/uImage"* "${ROOT_PATH}boot"
-		cp -d "${FW_REPO_LOCAL}/boot/config"* "${ROOT_PATH}boot"
-		cp -d "${FW_REPO_LOCAL}/boot/System"* "${ROOT_PATH}boot"
+		cp -d "${FW_REPO_LOCAL}/boot/uImage*" "${ROOT_PATH}boot" 2>/dev/null
+		cp -d "${FW_REPO_LOCAL}/boot/config*" "${ROOT_PATH}boot" 2>/dev/null
+		cp -d "${FW_REPO_LOCAL}/boot/System*" "${ROOT_PATH}boot" 2>/dev/null
 	fi
+	set -e
 }
 
 updateModules(){
 	echoBlue "*** Updating modules"
+	set +e
 	if $OPT_VERBOSE;then
 		echo -n "${COLOR_GRAY}"
-		cp -dvR "${FW_REPO_LOCAL}/modules/"* "${FW_MOD_PATH}/"
+		cp -dvR "${FW_REPO_LOCAL}/modules/*" "${FW_MOD_PATH}/" 2>/dev/null
 		echo -n "${NORMAL}"
 	else
-		cp -dR "${FW_REPO_LOCAL}/modules/"* "${FW_MOD_PATH}/"
+		cp -dR "${FW_REPO_LOCAL}/modules/*" "${FW_MOD_PATH}/" 2>/dev/null
 	fi
 	find "${FW_REPO_LOCAL}/modules" -mindepth 1 -maxdepth 1 -type d | while read DIR; do
 			echoBlue "*** Depmod $(basename "${DIR}")"
 			depmod -b "${ROOT_PATH}" -a $(basename "${DIR}")
 	done
+	set -e
 }
 
 updateFS(){
 	echoBlue "*** Updating fs"
+	set +e
 	if $OPT_VERBOSE;then
 		echo -n "${COLOR_GRAY}"
-		cp -dvR "${FW_REPO_LOCAL}/fs/"* "${ROOT_PATH}"
+		cp -dvR "${FW_REPO_LOCAL}/fs/*" "${ROOT_PATH}" 2>/dev/null
 		echo -n "${NORMAL}"
 	else
-		cp -dR "${FW_REPO_LOCAL}/fs/"* "${ROOT_PATH}"
+		cp -dR "${FW_REPO_LOCAL}/fs/*" "${ROOT_PATH}" 2>/dev/null
 	fi
+	set -e
 }
 
 acquireMMCDevice(){
