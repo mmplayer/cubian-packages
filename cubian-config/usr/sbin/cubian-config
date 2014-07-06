@@ -5,6 +5,7 @@
 
 INTERACTIVE=True
 ASK_TO_REBOOT=0
+OPT_INVOKE_LOGIN=false
 
 calc_wt_size() {
   # NOTE: it's tempting to redirect stderr to /dev/null, so supress error 
@@ -158,13 +159,6 @@ do_change_ssh_port() {
 }
 
 do_finish() {
-  if [ -e /etc/profile.d/raspi-config.sh ]; then
-    rm -f /etc/profile.d/raspi-config.sh
-    sed -i /etc/inittab \
-      -e "s/^#\(.*\)#\s*RPICFG_TO_ENABLE\s*/\1/" \
-      -e "/#\s*RPICFG_TO_DISABLE/d"
-    telinit q
-  fi
   if [ $ASK_TO_REBOOT -eq 1 ]; then
     whiptail --yesno "Would you like to reboot now?" 20 60 2
     if [ $? -eq 0 ]; then # yes
@@ -172,8 +166,32 @@ do_finish() {
       reboot
     fi
   fi
+  if $OPT_INVOKE_LOGIN;then
+	  /usr/bin/clear
+	  /bin/login
+  fi
   exit 0
 }
+
+
+#
+# Command line options for non-interactive use
+#
+for i in $*
+do
+  case $i in
+  --skip)
+    printf "Cubian config skipped\n"
+    exit 0
+    ;;
+  --invoke-login)
+	OPT_INVOKE_LOGIN=true
+	;;
+  *)
+    # unknown option
+    ;;
+  esac
+done
 
 # Everything else needs to be run as root
 if [ $(id -u) -ne 0 ]; then
