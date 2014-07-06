@@ -5,7 +5,6 @@
 
 INTERACTIVE=True
 ASK_TO_REBOOT=0
-OPT_INVOKE_LOGIN=false
 
 calc_wt_size() {
   # NOTE: it's tempting to redirect stderr to /dev/null, so supress error 
@@ -166,10 +165,6 @@ do_finish() {
       reboot
     fi
   fi
-  if $OPT_INVOKE_LOGIN;then
-	  /usr/bin/clear
-	  /bin/login
-  fi
   exit 0
 }
 
@@ -184,9 +179,6 @@ do
     printf "Cubian config skipped\n"
     exit 0
     ;;
-  --invoke-login)
-	OPT_INVOKE_LOGIN=true
-	;;
   *)
     # unknown option
     ;;
