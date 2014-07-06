@@ -4,6 +4,6 @@ Section: admin
 Priority: optional
 Architecture: all
 Depends: e2fsprogs (>= 1.1), util-linux (>= 2.20), coreutils (>= 8.13)
-Maintainer: cubian developer <sophiasmth@gmail.com>
-Description: a template package
- A bootstrap script to build deb packages
+Maintainer: cubieplayer <playcubie@gmail.com>
+Description: bootstrap package
+ bootstrap script to build deb packages
