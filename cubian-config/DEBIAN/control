@@ -1,0 +1,12 @@
+Package: cubian-config
+Version: 1.0-1
+Section: admin
+Priority: optional
+Architecture: all
+Depends: e2fsprogs (>= 1.1), util-linux (>= 2.20), coreutils (>= 8.13)
+Maintainer: cubieplayer <playcubie@gmail.com>
+Description: initial configuration script for cubian
+ This tool provides a straight-forward way of doing initial configuration.
+ Although it can be run at any time, some of the options may have difficulties 
+ if you have heavily customised your installation.
+ This is an adaptation of raspi-config for Cubian.
