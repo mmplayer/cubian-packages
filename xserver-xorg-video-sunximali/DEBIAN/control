@@ -1,5 +1,5 @@
 Package: xserver-xorg-video-sunximali
-Version: 1.0-4
+Version: 1.0-5
 Section: video
 Priority: optional
 Architecture: armhf
@@ -8,5 +8,8 @@ Suggests: sunxi-disp-test
 Maintainer: cubian developer <sophiasmth@gmail.com>
 Description: binary userspace drivers that a fully working system for sunxi
  The sun4i and sun5i use a Mali400MP1.
- We have support available for several versions of the mali binary driver stack, even though our kernel tends to come with the R3P0 version.
+ We have support available for several versions of
+ the mali binary driver stack, even though our kernel
+ tends to come with the R3P0 version.
+ .
  We support framebuffer and X11 as windowing systems.
