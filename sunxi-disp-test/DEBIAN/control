@@ -1,12 +1,29 @@
 Package: sunxi-disp-test
-Version: 1.0-1
+Version: 1.0-2
 Section: utils
 Priority: optional
 Architecture: armhf
-Depends: libc6
+Depends: libc6 (>= 2.13)
 Maintainer: cubian developer <sophiasmth@gmail.com>
 Description: sunxi mali display test programs
  contains the following program
  sunxi_disp_test 
  sunxi_disp_g2d_bench
  sunxi_disp_vsync_demo
+ .
+ copy from mesa-utils_8.0.1-2+b2_armhf.deb
+ http://ftp.cn.debian.org/debian/pool/main/m/
+ mesa-demos/mesa-utils_8.0.1-2%2bb2_armhf.deb
+ sunxi_glxdemo
+ sunxi_glxgears
+ sunxi_glxheads
+ sunxi_glxinfo
+ .
+ copy from mesa-utils-extra_8.2.0-1_armhf.deb 
+ http://ftp.cn.debian.org/debian/pool/main/m/
+ mesa-demos/mesa-utils-extra_8.2.0-1_armhf.deb
+ sunxi_es2gears
+ sunxi_es2gears_screen
+ sunxi_es2gears_x11
+ sunxi_es2_info
+ sunxi_es2tri
