@@ -1,0 +1,15 @@
+{
+	"browser": {
+		"custom_chrome_frame": true
+	},
+	"extensions": {
+		"theme": {
+			"id": "",
+			"use_system": false
+		}
+	},
+	"first_run_tabs": [
+		"http://cubian.org/",
+		"https://www.google.com/intl/en/chrome/browser/welcome.html"
+	]
+}

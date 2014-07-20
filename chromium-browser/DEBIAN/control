@@ -1,0 +1,23 @@
+Package: chromium-browser
+Version: 34.0.1847.116-0deb
+Architecture: armhf
+Maintainer: Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>
+Installed-Size: 99021
+Pre-Depends: dpkg (>= 1.15.6~)
+Depends: gconf-service, libasound2 (>= 1.0.23), libatk1.0-0 (>= 1.12.4), libc6 (>= 2.15), libcairo2 (>= 1.6.0), libcap2 (>= 2.10), libcomerr2 (>= 1.01), libcups2 (>= 1.4.0), libdbus-1-3 (>= 1.2.14), libexpat1 (>= 1.95.8), libfontconfig1 (>= 2.8.0), libfreetype6 (>= 2.3.9), libgcc1 (>= 1:4.4.0), libgconf-2-4 (>= 2.31.1), libgcrypt11 (>= 1.4.5), libgdk-pixbuf2.0-0 (>= 2.22.0), libglib2.0-0 (>= 2.18.0), libgnutls26 (>= 2.12.6.1-0), libgssapi-krb5-2 (>= 1.6.dfsg.2), libgtk2.0-0 (>= 2.24.0), libk5crypto3 (>= 1.6.dfsg.2), libkrb5-3 (>= 1.6.dfsg.2), libnspr4 (>= 1.8.0.10), libnss3 (>= 3.14.3), libpango1.0-0 (>= 1.22.0), libstdc++6 (>= 4.6), libudev0 (>= 147), libx11-6 (>= 2:1.2.99.901), libxcomposite1 (>= 1:0.3-1), libxcursor1 (>> 1.1.2), libxdamage1 (>= 1:1.1), libxext6, libxfixes3, libxi6 (>= 2:1.2.99.4), libxrender1, libxss1, libxtst6, zlib1g (>= 1:1.1.4), xdg-utils, chromium-codecs-ffmpeg-extra (>= 0.6) | chromium-codecs-ffmpeg (>= 0.6)
+Recommends: chromium-browser-l10n, pepperflashplugin-nonfree
+Conflicts: chromium-browser-inspector, chromium
+Replaces: chromium-browser-inspector 
+Provides: chromium-browser-inspector, www-browser
+Section: web
+Priority: optional
+Homepage: http://code.google.com/chromium/
+Description: Chromium browser
+ Chromium is an open-source browser project that aims to build a safer, faster,
+ and more stable way for all Internet users to experience the web.
+ .
+ Chromium serves as a base for Google Chrome, which is Chromium rebranded (name
+ and logo) with very few additions such as usage tracking and an auto-updater
+ system.
+ .
+ This package contains the Chromium browser
