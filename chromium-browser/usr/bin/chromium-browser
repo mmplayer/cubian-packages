@@ -50,8 +50,8 @@ export CPU_FEATURES_TESTED=1
 APPNAME=chromium-browser
 LIBDIR=/usr/lib/chromium-browser
 GDB=/usr/bin/gdb
-BUILD_DIST="Ubuntu 12.04"
-UPSTREAM_VERSION="34.0.1847.116"
+BUILD_DIST="Debian 7.4"
+UPSTREAM_VERSION="33.0.1750.152"
 if test -x "${LIBDIR}/${UPSTREAM_VERSION}"/chromium-browser; then
 	LIBDIR="${LIBDIR}/${UPSTREAM_VERSION}"
 fi
@@ -111,7 +111,7 @@ else
   export CHROME_VERSION_EXTRA="Built on $BUILD_DIST, running on $DIST $RELEASE"
 fi
 
-want_touch_pinch=0
+want_touch_pinch=1
 want_debug=0
 want_temp_profile=0
 while [ $# -gt 0 ]; do

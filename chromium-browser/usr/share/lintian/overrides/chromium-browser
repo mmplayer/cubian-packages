@@ -1,1 +1,2 @@
 chromium-browser: embedded-library
+chromium-browser: shlib-with-non-pic-code

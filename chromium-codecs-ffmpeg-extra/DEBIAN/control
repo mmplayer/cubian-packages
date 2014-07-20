@@ -1,11 +1,11 @@
 Package: chromium-codecs-ffmpeg-extra
 Source: chromium-browser
-Version: 34.0.1847.116-0deb
+Version: 333.0.1750.152-0deb
 Architecture: armhf
 Maintainer: Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>
-Installed-Size: 2607
+Installed-Size: 2582
 Pre-Depends: dpkg (>= 1.15.6~)
-Depends: libc6 (>= 2.15), libgcc1 (>= 1:4.4.0), libstdc++6 (>= 4.1.1), zlib1g (>= 1:1.1.4), chromium-browser (>= 4.0.203.0~)
+Depends: libc6 (>= 2.13-28), libgcc1 (>= 1:4.4.0), libstdc++6 (>= 4.1.1), zlib1g (>= 1:1.1.4), chromium-browser (>= 4.0.203.0~)
 Conflicts: chromium-codecs-ffmpeg
 Replaces: chromium-codecs-ffmpeg
 Section: web
