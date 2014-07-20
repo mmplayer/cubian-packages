@@ -1,0 +1,22 @@
+Package: chromium-browser-l10n
+Source: chromium-browser
+Version: 333.0.1750.152-0deb
+Architecture: all
+Maintainer: Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>
+Installed-Size: 18972
+Pre-Depends: dpkg (>= 1.15.6~)
+Depends: chromium-browser (>= 333.0.1750.152-0deb)
+Replaces: chromium-browser
+Section: web
+Priority: optional
+Homepage: http://code.google.com/chromium/
+Description: chromium-browser language packages
+ Chromium is an open-source browser project that aims to build a safer, faster,
+ and more stable way for all Internet users to experience the web.
+ .
+ This package contains language packages for 65 languages:
+ am, ar, ast, bg, bn, bs, ca, ca@valencia, cs, da, de, el, en-AU, en-GB, eo,
+ es-419, es, et, eu, fa, fil, fi, fr, gl, gu, he, hi, hr, hu, hy, ia, id, it,
+ ja, ka, kn, ko, ku, kw, lt, lv, ml, mr, ms, nb, nl, pl, pt-BR, pt-PT, ro, ru,
+ sk, sl, sr, sv, sw, ta, te, th, tr, ug, uk, vi, zh-CN, zh-TW
+Original-Maintainer: Micah Gersten <micahg@ubuntu.com>, Fabien Tassin <fta@ubuntu.com>
