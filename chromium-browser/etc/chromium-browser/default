@@ -2,4 +2,4 @@
 # /usr/bin/chromium-browser
 
 # Options to pass to chromium-browser
-CHROMIUM_FLAGS=""
+CHROMIUM_FLAGS="--ppapi-flash-path=/usr/lib/chromium-browser/libs/libpepflashplayer.so"

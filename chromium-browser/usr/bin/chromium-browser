@@ -100,9 +100,9 @@ export CHROME_DESKTOP=$APPNAME.desktop
 # instead, and fallback to lsb_release if we didn't get the information we need
 if [ -e /etc/lsb-release ] ; then
   . /etc/lsb-release
+  DIST=${DISTRIB_ID:-"`lsb_release -si`"}
+  RELEASE=${DISTRIB_RELEASE:-"`lsb_release -sr`"}
 fi
-DIST=${DISTRIB_ID:-"`lsb_release -si`"}
-RELEASE=${DISTRIB_RELEASE:-"`lsb_release -sr`"}
 
 # Set CHROME_VERSION_EXTRA visible in the About dialog and in about:version
 if [ "$DIST $RELEASE" = "$BUILD_DIST" ] ; then
