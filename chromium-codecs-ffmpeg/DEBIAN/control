@@ -1,0 +1,20 @@
+Package: chromium-codecs-ffmpeg
+Source: chromium-browser
+Version: 34.0.1847.116-0deb
+Architecture: armhf
+Maintainer: Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>
+Installed-Size: 1898
+Pre-Depends: dpkg (>= 1.15.6~)
+Depends: libc6 (>= 2.15), libgcc1 (>= 1:4.4.0), libstdc++6 (>= 4.1.1), zlib1g (>= 1:1.1.4), chromium-browser (>= 4.0.203.0~)
+Conflicts: chromium-codecs-ffmpeg-extra
+Replaces: chromium-codecs-ffmpeg-extra
+Section: web
+Priority: optional
+Homepage: http://code.google.com/chromium/
+Description: Free ffmpeg codecs for the Chromium Browser
+ Chromium is an open-source browser project that aims to build a safer, faster,
+ and more stable way for all Internet users to experience the web.
+ .
+ This package contains the multi-threaded ffmpeg codecs needed for the HTML5
+ <audio> and <video> tags. Only the free ogg, vorbis and theora codecs are
+ included. See chromium-codecs-ffmpeg-extra for additionnal codecs
