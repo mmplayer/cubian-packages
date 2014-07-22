@@ -1,5 +1,6 @@
 #!/bin/bash
 
+#TODO: update to a specific version
 set -e
 
 VERSION="1.3.6"
