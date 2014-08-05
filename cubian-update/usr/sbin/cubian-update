@@ -358,20 +358,21 @@ setFirmwareRepoUrl(){
 
 updateKernel(){
 	echoBlue "*** Updating kernel"
+	local bootPath="${ROOT_PATH}boot"
 	set +e
 	if $OPT_VERBOSE;then
 		echo -n "${COLOR_GRAY}"
 		# uImage, uImage-3.4.79-sun4i
-		cp -vd "${FW_REPO_LOCAL}/boot/uImage*" "${ROOT_PATH}boot" 2>/dev/null
+		cp -vd "${FW_REPO_LOCAL}"/boot/uImage* "${bootPath}" 2>/dev/null
 		# config-3.4.79-sun4i
-		cp -vd "${FW_REPO_LOCAL}/boot/config*" "${ROOT_PATH}boot" 2>/dev/null
+		cp -vd "${FW_REPO_LOCAL}"/boot/config* "${bootPath}" 2>/dev/null
 		# System.map-3.4.79-sun4i
-		cp -vd "${FW_REPO_LOCAL}/boot/System*" "${ROOT_PATH}boot" 2>/dev/null
+		cp -vd "${FW_REPO_LOCAL}"/boot/System* "${bootPath}" 2>/dev/null
 		echo -n "${NORMAL}"
 	else
-		cp -d "${FW_REPO_LOCAL}/boot/uImage*" "${ROOT_PATH}boot" 2>/dev/null
-		cp -d "${FW_REPO_LOCAL}/boot/config*" "${ROOT_PATH}boot" 2>/dev/null
-		cp -d "${FW_REPO_LOCAL}/boot/System*" "${ROOT_PATH}boot" 2>/dev/null
+		cp -d "${FW_REPO_LOCAL}"/boot/uImage* "${bootPath}" 2>/dev/null
+		cp -d "${FW_REPO_LOCAL}"/boot/config* "${bootPath}" 2>/dev/null
+		cp -d "${FW_REPO_LOCAL}"/boot/System* "${bootPath}" 2>/dev/null
 	fi
 	set -e
 }
@@ -381,10 +382,10 @@ updateModules(){
 	set +e
 	if $OPT_VERBOSE;then
 		echo -n "${COLOR_GRAY}"
-		cp -dvR "${FW_REPO_LOCAL}/modules/*" "${FW_MOD_PATH}/" 2>/dev/null
+		cp -dvR "${FW_REPO_LOCAL}"/modules/* "${FW_MOD_PATH}/" 2>/dev/null
 		echo -n "${NORMAL}"
 	else
-		cp -dR "${FW_REPO_LOCAL}/modules/*" "${FW_MOD_PATH}/" 2>/dev/null
+		cp -dR "${FW_REPO_LOCAL}"/modules/* "${FW_MOD_PATH}/" 2>/dev/null
 	fi
 	find "${FW_REPO_LOCAL}/modules" -mindepth 1 -maxdepth 1 -type d | while read DIR; do
 			echoBlue "*** Depmod $(basename "${DIR}")"
@@ -398,10 +399,10 @@ updateFS(){
 	set +e
 	if $OPT_VERBOSE;then
 		echo -n "${COLOR_GRAY}"
-		cp -dvR "${FW_REPO_LOCAL}/fs/*" "${ROOT_PATH}" 2>/dev/null
+		cp -dvR "${FW_REPO_LOCAL}"/fs/* "${ROOT_PATH}" 2>/dev/null
 		echo -n "${NORMAL}"
 	else
-		cp -dR "${FW_REPO_LOCAL}/fs/*" "${ROOT_PATH}" 2>/dev/null
+		cp -dR "${FW_REPO_LOCAL}"/fs/* "${ROOT_PATH}" 2>/dev/null
 	fi
 	set -e
 }
