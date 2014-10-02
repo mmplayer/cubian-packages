@@ -38,6 +38,9 @@ export BASH_ENV=
 export CDPATH=
 export GLOBIGNORE=
 export BASH_XTRACEFD=
+export GOOGLE_API_KEY=AIzaSyCWBmUuxZW1VaZZHkIembF2nengp8asUEk
+export GOOGLE_DEFAULT_CLIENT_ID=1038894449561-bjihbnffo05svbqcncq7clirvq9meh0c.apps.googleusercontent.com
+export GOOGLE_DEFAULT_CLIENT_SECRET=OeKyUMzNTZ1-hPPypa7GiW4x
 
 if grep -E -w ^Features\\s\*:.\*neon /proc/cpuinfo >/dev/null; then
 	export CPU_FEATURE_NEON=1
