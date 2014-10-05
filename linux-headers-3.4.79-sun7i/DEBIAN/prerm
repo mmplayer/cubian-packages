@@ -40,8 +40,8 @@ my $package_name       = "linux-headers-$version";
 my $kernel_pkg_version = "12.036+nmu2";
 
 
-# Ignore all invocations uxcept when called on to configure.
-exit 0 unless ($ARGV[0] && $ARGV[0] =~ /configure/);
+# Ignore all invocations uxcept when called on to remove.
+exit 0 unless ($ARGV[0] && $ARGV[0] =~ /remove/);
 
 #known variables
 my $image_dest      = "/";
