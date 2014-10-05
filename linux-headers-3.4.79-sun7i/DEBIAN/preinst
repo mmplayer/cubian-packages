@@ -135,20 +135,20 @@ $ENV{'DEB_MAINT_PARAMS'}="$out";
 $ENV{'KERNEL_PACKAGE_VERSION'}="$kernel_pkg_version";
 
 ## Run user hook script here, if any
-if (-d "/etc/kernel/header_postinst.d") {
-  print STDERR "Examining /etc/kernel/header_postinst.d.\n";
+if (-d "/etc/kernel/header_preinst.d") {
+  print STDERR "Examining /etc/kernel/header_preinst.d.\n";
   system ("run-parts --verbose --exit-on-error --arg=$version " .
           "--arg=$realimageloc$kimage-$version " .
-          "/etc/kernel/header_postinst.d") &&
-            die "Failed to process /etc/kernel/header_postinst.d";
+          "/etc/kernel/header_preinst.d") &&
+            die "Failed to process /etc/kernel/header_preinst.d";
 }
 
-if (-d "/etc/kernel/header_postinst.d/$version") {
-  print STDERR "Examining /etc/kernel/header_postinst.d/$version.\n";
+if (-d "/etc/kernel/header_preinst.d/$version") {
+  print STDERR "Examining /etc/kernel/header_preinst.d/$version.\n";
   system ("run-parts --verbose --exit-on-error --arg=$version " .
           "--arg=$realimageloc$kimage-$version " .
-          "/etc/kernel/header_postinst.d/$version") &&
-            die "Failed to process /etc/kernel/header_postinst.d/$version";
+          "/etc/kernel/header_preinst.d/$version") &&
+            die "Failed to process /etc/kernel/header_preinst.d/$version";
 }
 
 if (-x "$header_postinst_hook") {
