@@ -8,7 +8,7 @@ set -e
 cd $header_loc
 make oldconfig && make prepare && make scripts/kallsyms
 
-build="/lib/modules/3.4.79-sun4i/build"
+build="/lib/modules/`uname -r`/build"
 set +e
 curr_link=$(readlink $build)
 expected_link="$header_loc"

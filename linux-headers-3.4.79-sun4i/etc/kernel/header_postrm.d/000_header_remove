@@ -1,4 +1,5 @@
 #!/bin/sh
 header_loc="/usr/src/linux-headers-$1"
+build="/lib/modules/`uname -r`/build"
 rm -rf $header_loc
 rm -f $build
