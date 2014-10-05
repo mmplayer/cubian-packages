@@ -1,4 +1,4 @@
-#!/bin/awk
+#!/usr/bin/awk
 #
 # Awk script to generate include/generated/mach-types.h
 #
