@@ -1,6 +1,6 @@
 Package: linux-headers-3.4.79-sun7i
 Source: linux-source-3.4.79-sun7i
-Version: 3.4.79-2cubian
+Version: 3.4.79-3cubian
 Architecture: armhf
 Maintainer: Unknown Kernel Package Maintainer <unknown@unconfigured.in.etc.kernel-pkg.conf>
 Installed-Size: 38419
