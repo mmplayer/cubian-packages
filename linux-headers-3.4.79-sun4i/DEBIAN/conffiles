@@ -1,0 +1,2 @@
+/etc/kernel/header_postinst.d/000_header_prepare
+/etc/kernel/header_postrm.d/000_header_remove

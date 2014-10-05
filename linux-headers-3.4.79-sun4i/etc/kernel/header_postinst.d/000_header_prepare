@@ -1,0 +1,14 @@
+#!/bin/sh
+header_loc="/usr/src/linux-headers-$1"
+set -e
+make oldconfig && make prepare && make scripts/kallsyms
+build="/lib/modules/3.4.79-sun4i/build"
+set +e
+curr_link=$(readlink $build)
+expected_link="$header_loc"
+if [ -z $curr_link ];then
+  ln -sf $expected_link $build
+elif [ "$curr_link" != "$expected_link" ];then
+  rm $build
+  ln -sf $expected_link $build
+fi

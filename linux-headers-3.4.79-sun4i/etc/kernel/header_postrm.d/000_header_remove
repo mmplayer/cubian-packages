@@ -1,0 +1,4 @@
+#!/bin/sh
+header_loc="/usr/src/linux-headers-$1"
+rm -rf $header_loc
+rm -f $build
