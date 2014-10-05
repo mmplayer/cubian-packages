@@ -1,7 +1,13 @@
 #!/bin/sh
+echo "############################"
+echo "#    preparing headers     #"
+echo "#      please wait         #"
+echo "############################"
 header_loc="/usr/src/linux-headers-$1"
 set -e
+cd $header_loc
 make oldconfig && make prepare && make scripts/kallsyms
+
 build="/lib/modules/3.4.79-sun4i/build"
 set +e
 curr_link=$(readlink $build)
@@ -12,3 +18,6 @@ elif [ "$curr_link" != "$expected_link" ];then
   rm $build
   ln -sf $expected_link $build
 fi
+echo "############################"
+echo "# headers is ready to use  #"
+echo "############################"
