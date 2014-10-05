@@ -117,20 +117,20 @@ $ENV{'DEB_MAINT_PARAMS'}="$out";
 $ENV{'KERNEL_PACKAGE_VERSION'}="$kernel_pkg_version";
 
 ## Run user hook script here, if any
-if (-d "/etc/kernel/src_postinst.d") {
-  print STDERR "Examining /etc/kernel/src_postinst.d.\n";
+if (-d "/etc/kernel/src_prerm.d") {
+  print STDERR "Examining /etc/kernel/src_prerm.d.\n";
   system ("run-parts --verbose --exit-on-error --arg=$version " .
           "--arg=$realimageloc$kimage-$version " .
-          "/etc/kernel/src_postinst.d") &&
-            die "Failed to process /etc/kernel/src_postinst.d";
+          "/etc/kernel/src_prerm.d") &&
+            die "Failed to process /etc/kernel/src_prerm.d";
 }
 
-if (-d "/etc/kernel/src_postinst.d/$version") {
-  print STDERR "Examining /etc/kernel/src_postinst.d/$version.\n";
+if (-d "/etc/kernel/src_prerm.d/$version") {
+  print STDERR "Examining /etc/kernel/src_prerm.d/$version.\n";
   system ("run-parts --verbose --exit-on-error --arg=$version " .
           "--arg=$realimageloc$kimage-$version " .
-          "/etc/kernel/src_postinst.d/$version") &&
-            die "Failed to process /etc/kernel/src_postinst.d/$version";
+          "/etc/kernel/src_prerm.d/$version") &&
+            die "Failed to process /etc/kernel/src_prerm.d/$version";
 }
 
 if (-x "$src_postinst_hook") {
