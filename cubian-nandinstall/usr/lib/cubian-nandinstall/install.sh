@@ -169,7 +169,7 @@ installBootloader(){
 rm -rf $MNT_BOOT/*
 rsync -avc $BOOTLOADER/* $MNT_BOOT
 rsync -avc /boot/script.bin /boot/uEnv.txt /boot/uImage* $MNT_ROOT/boot/
-sed -e 's|root=/dev/mmcblk0p1|root='$NAND_ROOT_DEVICE'|g' -i $MNT_ROOT/boot/uEnv.txt
+sed -e 's|root=/dev/mmcblk0p.|root='$NAND_ROOT_DEVICE'|g' -i $MNT_ROOT/boot/uEnv.txt
 if [[ "$DEVICE_TYPE" = "${DEVICE_A20}" ]];then
 	echo "machid=${MACH_ID}" >> $MNT_ROOT/boot/uEnv.txt
 fi
